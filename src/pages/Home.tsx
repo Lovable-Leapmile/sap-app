@@ -1,73 +1,168 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OrderCard from "@/components/OrderCard";
-import OrderBottomSheet from "@/components/OrderBottomSheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LogOut, Package } from "lucide-react";
 
 // Dummy order data
-const orders = [
+export const orders = [
   {
     orderId: "ORD-2024-001",
-    itemId: "ITEM-5432",
-    quantity: 150,
+    totalItems: 3,
     date: "2024-10-15",
-    trays: [
-      { trayId: "TRY-A-001", quantity: 50, status: "in-station" as const },
-      { trayId: "TRY-A-002", quantity: 50, status: "processing" as const },
-      { trayId: "TRY-A-003", quantity: 50, status: "pending" as const },
+    items: [
+      {
+        itemId: "ITEM-5432",
+        itemName: "Hydraulic Pump",
+        quantity: 150,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-A-001", quantity: 50, status: "in-station" as const },
+          { trayId: "TRY-A-002", quantity: 50, status: "processing" as const },
+          { trayId: "TRY-A-003", quantity: 50, status: "pending" as const },
+        ],
+      },
+      {
+        itemId: "ITEM-6543",
+        itemName: "Pressure Valve",
+        quantity: 80,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-A-004", quantity: 80, status: "in-station" as const },
+        ],
+      },
+      {
+        itemId: "ITEM-7654",
+        itemName: "Filter Kit",
+        quantity: 200,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-A-005", quantity: 100, status: "pending" as const },
+          { trayId: "TRY-A-006", quantity: 100, status: "pending" as const },
+        ],
+      },
     ],
   },
   {
     orderId: "ORD-2024-002",
-    itemId: "ITEM-6789",
-    quantity: 200,
+    totalItems: 2,
     date: "2024-10-15",
-    trays: [
-      { trayId: "TRY-B-001", quantity: 100, status: "in-station" as const },
-      { trayId: "TRY-B-002", quantity: 100, status: "pending" as const },
+    items: [
+      {
+        itemId: "ITEM-6789",
+        itemName: "Sealing Ring",
+        quantity: 200,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-B-001", quantity: 100, status: "in-station" as const },
+          { trayId: "TRY-B-002", quantity: 100, status: "pending" as const },
+        ],
+      },
+      {
+        itemId: "ITEM-7890",
+        itemName: "Bearing Assembly",
+        quantity: 50,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-B-003", quantity: 50, status: "processing" as const },
+        ],
+      },
     ],
   },
   {
     orderId: "ORD-2024-003",
-    itemId: "ITEM-9012",
-    quantity: 75,
+    totalItems: 1,
     date: "2024-10-16",
-    trays: [
-      { trayId: "TRY-C-001", quantity: 75, status: "processing" as const },
+    items: [
+      {
+        itemId: "ITEM-9012",
+        itemName: "Control Module",
+        quantity: 75,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-C-001", quantity: 75, status: "processing" as const },
+        ],
+      },
     ],
   },
   {
     orderId: "ORD-2024-004",
-    itemId: "ITEM-3456",
-    quantity: 300,
+    totalItems: 4,
     date: "2024-10-16",
-    trays: [
-      { trayId: "TRY-D-001", quantity: 100, status: "in-station" as const },
-      { trayId: "TRY-D-002", quantity: 100, status: "in-station" as const },
-      { trayId: "TRY-D-003", quantity: 100, status: "pending" as const },
+    items: [
+      {
+        itemId: "ITEM-3456",
+        itemName: "Connector Set",
+        quantity: 300,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-D-001", quantity: 100, status: "in-station" as const },
+          { trayId: "TRY-D-002", quantity: 100, status: "in-station" as const },
+          { trayId: "TRY-D-003", quantity: 100, status: "pending" as const },
+        ],
+      },
+      {
+        itemId: "ITEM-4567",
+        itemName: "Gasket Pack",
+        quantity: 120,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-D-004", quantity: 120, status: "in-station" as const },
+        ],
+      },
+      {
+        itemId: "ITEM-5678",
+        itemName: "Mounting Bracket",
+        quantity: 60,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-D-005", quantity: 60, status: "pending" as const },
+        ],
+      },
+      {
+        itemId: "ITEM-6789",
+        itemName: "Fastener Kit",
+        quantity: 500,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-D-006", quantity: 250, status: "in-station" as const },
+          { trayId: "TRY-D-007", quantity: 250, status: "pending" as const },
+        ],
+      },
     ],
   },
   {
     orderId: "ORD-2024-005",
-    itemId: "ITEM-7890",
-    quantity: 125,
+    totalItems: 2,
     date: "2024-10-17",
-    trays: [
-      { trayId: "TRY-E-001", quantity: 125, status: "pending" as const },
+    items: [
+      {
+        itemId: "ITEM-7890",
+        itemName: "Cable Assembly",
+        quantity: 125,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-E-001", quantity: 125, status: "pending" as const },
+        ],
+      },
+      {
+        itemId: "ITEM-8901",
+        itemName: "Junction Box",
+        quantity: 40,
+        pickedQuantity: 0,
+        trays: [
+          { trayId: "TRY-E-002", quantity: 40, status: "pending" as const },
+        ],
+      },
     ],
   },
 ];
 
 const Home = () => {
-  const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null);
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const navigate = useNavigate();
 
-  const handleSelectOrder = (order: typeof orders[0]) => {
-    setSelectedOrder(order);
-    setIsBottomSheetOpen(true);
+  const handleSelectOrder = (orderId: string) => {
+    navigate(`/home/${orderId}`);
   };
 
   const handleLogout = () => {
@@ -109,21 +204,13 @@ const Home = () => {
             <OrderCard
               key={order.orderId}
               orderId={order.orderId}
-              itemId={order.itemId}
-              quantity={order.quantity}
+              totalItems={order.totalItems}
               date={order.date}
-              onSelect={() => handleSelectOrder(order)}
+              onSelect={() => handleSelectOrder(order.orderId)}
             />
           ))}
         </div>
       </ScrollArea>
-
-      {/* Bottom Sheet */}
-      <OrderBottomSheet
-        isOpen={isBottomSheetOpen}
-        onClose={() => setIsBottomSheetOpen(false)}
-        order={selectedOrder}
-      />
     </div>
   );
 };
