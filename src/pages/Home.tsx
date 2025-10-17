@@ -200,15 +200,31 @@ const Home = () => {
             </p>
           </div>
           
-          {orders.map((order) => (
-            <OrderCard
-              key={order.orderId}
-              orderId={order.orderId}
-              totalItems={order.totalItems}
-              date={order.date}
-              onSelect={() => handleSelectOrder(order.orderId)}
-            />
-          ))}
+          {orders.map((order) => {
+            // Calculate stats for each order
+            const pendingCount = order.items.reduce((sum, item) => 
+              sum + item.trays.filter(tray => tray.status === "pending").length, 0
+            );
+            const inStationCount = order.items.reduce((sum, item) => 
+              sum + item.trays.filter(tray => tray.status === "in-station").length, 0
+            );
+            const totalPicked = order.items.reduce((sum, item) => sum + item.pickedQuantity, 0);
+            const totalRequired = order.items.reduce((sum, item) => sum + item.quantity, 0);
+
+            return (
+              <OrderCard
+                key={order.orderId}
+                orderId={order.orderId}
+                totalItems={order.totalItems}
+                date={order.date}
+                pendingCount={pendingCount}
+                inStationCount={inStationCount}
+                totalPicked={totalPicked}
+                totalRequired={totalRequired}
+                onSelect={() => handleSelectOrder(order.orderId)}
+              />
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

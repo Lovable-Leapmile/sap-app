@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Package, Calendar, Layers } from "lucide-react";
+import { ArrowLeft, Package, Calendar, Layers, CheckCircle2, Clock } from "lucide-react";
 import { orders } from "./Home";
 import ItemCard from "@/components/ItemCard";
 
@@ -10,6 +11,16 @@ const OrderDetails = () => {
   const navigate = useNavigate();
 
   const order = orders.find((o) => o.orderId === orderId);
+
+  // Calculate stats
+  const pendingCount = order?.items.reduce((sum, item) => 
+    sum + item.trays.filter(tray => tray.status === "pending").length, 0
+  ) || 0;
+  const inStationCount = order?.items.reduce((sum, item) => 
+    sum + item.trays.filter(tray => tray.status === "in-station").length, 0
+  ) || 0;
+  const totalPicked = order?.items.reduce((sum, item) => sum + item.pickedQuantity, 0) || 0;
+  const totalRequired = order?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   if (!order) {
     return (
@@ -42,7 +53,7 @@ const OrderDetails = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-primary/5 rounded-xl p-4 border-2 border-primary/20">
+          <div className="bg-primary/5 rounded-xl p-4 border-2 border-primary/20 space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -67,6 +78,26 @@ const OrderDetails = () => {
                 </div>
                 <p className="text-sm font-semibold text-foreground">{order.date}</p>
               </div>
+            </div>
+
+            {/* Status Badges */}
+            <div className="flex gap-2">
+              <Badge className="bg-success text-success-foreground">
+                <CheckCircle2 size={14} className="mr-1" />
+                {inStationCount} In Station
+              </Badge>
+              <Badge className="bg-warning text-warning-foreground">
+                <Clock size={14} className="mr-1" />
+                {pendingCount} Pending
+              </Badge>
+            </div>
+
+            {/* Picked Status */}
+            <div className="text-sm">
+              <span className="text-muted-foreground">Picked: </span>
+              <span className="font-bold text-foreground">{totalPicked}</span>
+              <span className="text-muted-foreground"> / </span>
+              <span className="font-bold text-primary">{totalRequired}</span>
             </div>
           </div>
         </div>
