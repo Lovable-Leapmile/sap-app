@@ -10,6 +10,7 @@ interface Tray {
   trayId: string;
   quantity: number;
   status: "in-station" | "processing" | "pending";
+  station?: string;
 }
 
 interface Item {
@@ -110,6 +111,7 @@ const ItemCard = ({ item }: ItemCardProps) => {
                 trayId={tray.trayId}
                 quantity={tray.quantity}
                 status={tray.status}
+                station={tray.station}
                 onRequest={handleTrayRequest}
               />
             ))}

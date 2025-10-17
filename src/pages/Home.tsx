@@ -17,7 +17,7 @@ export const orders = [
         quantity: 150,
         pickedQuantity: 0,
         trays: [
-          { trayId: "TRY-A-001", quantity: 50, status: "in-station" as const },
+          { trayId: "TRY-A-001", quantity: 50, status: "in-station" as const, station: "A" },
           { trayId: "TRY-A-002", quantity: 50, status: "processing" as const },
           { trayId: "TRY-A-003", quantity: 50, status: "pending" as const },
         ],
@@ -28,7 +28,7 @@ export const orders = [
         quantity: 80,
         pickedQuantity: 0,
         trays: [
-          { trayId: "TRY-A-004", quantity: 80, status: "in-station" as const },
+          { trayId: "TRY-A-004", quantity: 80, status: "in-station" as const, station: "B" },
         ],
       },
       {
@@ -54,7 +54,7 @@ export const orders = [
         quantity: 200,
         pickedQuantity: 0,
         trays: [
-          { trayId: "TRY-B-001", quantity: 100, status: "in-station" as const },
+          { trayId: "TRY-B-001", quantity: 100, status: "in-station" as const, station: "A" },
           { trayId: "TRY-B-002", quantity: 100, status: "pending" as const },
         ],
       },
@@ -96,8 +96,8 @@ export const orders = [
         quantity: 300,
         pickedQuantity: 0,
         trays: [
-          { trayId: "TRY-D-001", quantity: 100, status: "in-station" as const },
-          { trayId: "TRY-D-002", quantity: 100, status: "in-station" as const },
+          { trayId: "TRY-D-001", quantity: 100, status: "in-station" as const, station: "A" },
+          { trayId: "TRY-D-002", quantity: 100, status: "in-station" as const, station: "B" },
           { trayId: "TRY-D-003", quantity: 100, status: "pending" as const },
         ],
       },
@@ -107,7 +107,7 @@ export const orders = [
         quantity: 120,
         pickedQuantity: 0,
         trays: [
-          { trayId: "TRY-D-004", quantity: 120, status: "in-station" as const },
+          { trayId: "TRY-D-004", quantity: 120, status: "in-station" as const, station: "A" },
         ],
       },
       {
@@ -125,7 +125,7 @@ export const orders = [
         quantity: 500,
         pickedQuantity: 0,
         trays: [
-          { trayId: "TRY-D-006", quantity: 250, status: "in-station" as const },
+          { trayId: "TRY-D-006", quantity: 250, status: "in-station" as const, station: "B" },
           { trayId: "TRY-D-007", quantity: 250, status: "pending" as const },
         ],
       },

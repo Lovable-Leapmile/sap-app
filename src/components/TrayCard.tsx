@@ -2,24 +2,64 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Box, Package, CheckCircle2, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Box, Package, CheckCircle2, Loader2, Plus, Minus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface TrayCardProps {
   trayId: string;
   quantity: number;
   status: "in-station" | "processing" | "pending";
+  station?: string;
   onRequest: (trayId: string) => void;
 }
 
-const TrayCard = ({ trayId, quantity, status, onRequest }: TrayCardProps) => {
-  const [isRequesting, setIsRequesting] = useState(false);
+const TrayCard = ({ trayId, quantity, status, station, onRequest }: TrayCardProps) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [showConfirmButtons, setShowConfirmButtons] = useState(false);
+  const { toast } = useToast();
 
-  const handleRequest = () => {
-    setIsRequesting(true);
-    setTimeout(() => {
-      onRequest(trayId);
-      setIsRequesting(false);
-    }, 500);
+  const handleSelectTray = () => {
+    setIsDialogOpen(true);
+    setSelectedQuantity(1);
+    setShowConfirmButtons(false);
+  };
+
+  const handleQuantityConfirm = () => {
+    setShowConfirmButtons(true);
+  };
+
+  const handleConfirmPick = () => {
+    toast({
+      title: "Pick Confirmed",
+      description: `Picked ${selectedQuantity} items from ${trayId}`,
+      duration: 3000,
+    });
+    setIsDialogOpen(false);
+    setShowConfirmButtons(false);
+  };
+
+  const handleReleaseTray = () => {
+    toast({
+      title: "Tray Released",
+      description: `${trayId} has been released`,
+      duration: 3000,
+    });
+    setIsDialogOpen(false);
+    setShowConfirmButtons(false);
+  };
+
+  const incrementQuantity = () => {
+    if (selectedQuantity < quantity) {
+      setSelectedQuantity(selectedQuantity + 1);
+    }
+  };
+
+  const decrementQuantity = () => {
+    if (selectedQuantity > 1) {
+      setSelectedQuantity(selectedQuantity - 1);
+    }
   };
 
   const getStatusBadge = () => {
@@ -73,32 +113,100 @@ const TrayCard = ({ trayId, quantity, status, onRequest }: TrayCardProps) => {
         {getStatusBadge()}
       </div>
 
-      <div className="flex items-center gap-2 py-2 px-3 bg-card rounded-lg">
-        <Package className="text-muted-foreground" size={18} />
-        <span className="text-sm text-muted-foreground">Quantity:</span>
-        <span className="text-base font-bold text-foreground">{quantity}</span>
+      <div className="flex items-center justify-between py-2 px-3 bg-card rounded-lg">
+        <div className="flex items-center gap-2">
+          <Package className="text-muted-foreground" size={18} />
+          <span className="text-sm text-muted-foreground">Quantity:</span>
+          <span className="text-base font-bold text-foreground">{quantity}</span>
+        </div>
+        {status === "in-station" && station && (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground">Station:</span>
+            <Badge variant="outline" className="font-bold">{station}</Badge>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">{getStatusText()}</p>
-        {status === "pending" && (
+        <div className="flex gap-2">
           <Button
-            onClick={handleRequest}
-            variant="accent"
-            className="w-full"
-            disabled={isRequesting}
+            onClick={handleSelectTray}
+            className="flex-1 bg-success text-success-foreground hover:bg-success/90"
           >
-            {isRequesting ? (
-              <>
-                <Loader2 className="animate-spin" />
-                Requesting...
-              </>
-            ) : (
-              "Request Tray"
-            )}
+            Select Tray
           </Button>
-        )}
+          <Button
+            onClick={handleReleaseTray}
+            variant="destructive"
+            className="flex-1"
+          >
+            Release Tray
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Quantity - {trayId}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center gap-6 py-6">
+            <div className="flex items-center gap-4">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={decrementQuantity}
+                disabled={selectedQuantity <= 1}
+                className="h-12 w-12"
+              >
+                <Minus size={20} />
+              </Button>
+              
+              <div className="text-center min-w-[80px]">
+                <p className="text-4xl font-bold text-foreground">{selectedQuantity}</p>
+                <p className="text-xs text-muted-foreground mt-1">of {quantity}</p>
+              </div>
+              
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={incrementQuantity}
+                disabled={selectedQuantity >= quantity}
+                className="h-12 w-12"
+              >
+                <Plus size={20} />
+              </Button>
+            </div>
+
+            {!showConfirmButtons ? (
+              <Button
+                onClick={handleQuantityConfirm}
+                className="w-full bg-primary"
+              >
+                Confirm Quantity
+              </Button>
+            ) : (
+              <div className="flex gap-3 w-full">
+                <Button
+                  onClick={handleConfirmPick}
+                  className="flex-1 bg-success text-success-foreground hover:bg-success/90"
+                >
+                  ✓ Confirm Pick
+                </Button>
+                <Button
+                  onClick={handleReleaseTray}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  ↻ Release Tray
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
