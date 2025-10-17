@@ -15,7 +15,7 @@ export const orders = [
         itemId: "ITEM-5432",
         itemName: "Hydraulic Pump",
         quantity: 150,
-        pickedQuantity: 0,
+        pickedQuantity: 50,
         trays: [
           { trayId: "TRY-A-001", quantity: 50, status: "in-station" as const, station: "A" },
           { trayId: "TRY-A-002", quantity: 50, status: "processing" as const },
@@ -26,7 +26,7 @@ export const orders = [
         itemId: "ITEM-6543",
         itemName: "Pressure Valve",
         quantity: 80,
-        pickedQuantity: 0,
+        pickedQuantity: 30,
         trays: [
           { trayId: "TRY-A-004", quantity: 80, status: "in-station" as const, station: "B" },
         ],
@@ -35,7 +35,7 @@ export const orders = [
         itemId: "ITEM-7654",
         itemName: "Filter Kit",
         quantity: 200,
-        pickedQuantity: 0,
+        pickedQuantity: 100,
         trays: [
           { trayId: "TRY-A-005", quantity: 100, status: "pending" as const },
           { trayId: "TRY-A-006", quantity: 100, status: "pending" as const },
@@ -52,7 +52,7 @@ export const orders = [
         itemId: "ITEM-6789",
         itemName: "Sealing Ring",
         quantity: 200,
-        pickedQuantity: 0,
+        pickedQuantity: 150,
         trays: [
           { trayId: "TRY-B-001", quantity: 100, status: "in-station" as const, station: "A" },
           { trayId: "TRY-B-002", quantity: 100, status: "pending" as const },
@@ -62,7 +62,7 @@ export const orders = [
         itemId: "ITEM-7890",
         itemName: "Bearing Assembly",
         quantity: 50,
-        pickedQuantity: 0,
+        pickedQuantity: 25,
         trays: [
           { trayId: "TRY-B-003", quantity: 50, status: "processing" as const },
         ],
@@ -94,7 +94,7 @@ export const orders = [
         itemId: "ITEM-3456",
         itemName: "Connector Set",
         quantity: 300,
-        pickedQuantity: 0,
+        pickedQuantity: 200,
         trays: [
           { trayId: "TRY-D-001", quantity: 100, status: "in-station" as const, station: "A" },
           { trayId: "TRY-D-002", quantity: 100, status: "in-station" as const, station: "B" },
@@ -105,7 +105,7 @@ export const orders = [
         itemId: "ITEM-4567",
         itemName: "Gasket Pack",
         quantity: 120,
-        pickedQuantity: 0,
+        pickedQuantity: 60,
         trays: [
           { trayId: "TRY-D-004", quantity: 120, status: "in-station" as const, station: "A" },
         ],
@@ -114,7 +114,7 @@ export const orders = [
         itemId: "ITEM-5678",
         itemName: "Mounting Bracket",
         quantity: 60,
-        pickedQuantity: 0,
+        pickedQuantity: 10,
         trays: [
           { trayId: "TRY-D-005", quantity: 60, status: "pending" as const },
         ],
@@ -123,7 +123,7 @@ export const orders = [
         itemId: "ITEM-6789",
         itemName: "Fastener Kit",
         quantity: 500,
-        pickedQuantity: 0,
+        pickedQuantity: 250,
         trays: [
           { trayId: "TRY-D-006", quantity: 250, status: "in-station" as const, station: "B" },
           { trayId: "TRY-D-007", quantity: 250, status: "pending" as const },
