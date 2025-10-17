@@ -132,26 +132,26 @@ const TrayCard = ({ trayId, quantity, status, station, onRequest }: TrayCardProp
         {status === "in-station" && (
           <div className="flex gap-2">
             <Button
-              onClick={handleSelectTray}
-              className="flex-1 bg-success text-success-foreground hover:bg-success/90"
-            >
-              Select Tray
-            </Button>
-            <Button
               onClick={handleReleaseTray}
               variant="destructive"
               className="flex-1"
             >
               Release Tray
             </Button>
+            <Button
+              onClick={handleSelectTray}
+              className="flex-1 bg-success text-success-foreground hover:bg-success/90"
+            >
+              Select Tray
+            </Button>
           </div>
         )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[80%] max-w-lg rounded-3xl">
           <DialogHeader>
-            <DialogTitle>Select Quantity - {trayId}</DialogTitle>
+            <DialogTitle className="text-xl">Select Quantity - {trayId}</DialogTitle>
           </DialogHeader>
           
           <div className="flex flex-col items-center gap-6 py-6">
