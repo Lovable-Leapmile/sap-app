@@ -208,8 +208,6 @@ const Home = () => {
             const inStationCount = order.items.reduce((sum, item) => 
               sum + item.trays.filter(tray => tray.status === "in-station").length, 0
             );
-            const totalPicked = order.items.reduce((sum, item) => sum + item.pickedQuantity, 0);
-            const totalRequired = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
             return (
               <OrderCard
@@ -219,8 +217,6 @@ const Home = () => {
                 date={order.date}
                 pendingCount={pendingCount}
                 inStationCount={inStationCount}
-                totalPicked={totalPicked}
-                totalRequired={totalRequired}
                 onSelect={() => handleSelectOrder(order.orderId)}
               />
             );

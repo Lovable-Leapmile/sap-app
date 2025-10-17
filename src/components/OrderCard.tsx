@@ -9,12 +9,10 @@ interface OrderCardProps {
   date: string;
   pendingCount: number;
   inStationCount: number;
-  totalPicked: number;
-  totalRequired: number;
   onSelect: () => void;
 }
 
-const OrderCard = ({ orderId, totalItems, date, pendingCount, inStationCount, totalPicked, totalRequired, onSelect }: OrderCardProps) => {
+const OrderCard = ({ orderId, totalItems, date, pendingCount, inStationCount, onSelect }: OrderCardProps) => {
   return (
     <Card className="p-5 bg-card hover:shadow-lg transition-all duration-300 border-2 border-border hover:border-primary/30 animate-fade-in">
       <div className="flex items-center justify-between gap-4">
@@ -60,11 +58,6 @@ const OrderCard = ({ orderId, totalItems, date, pendingCount, inStationCount, to
                 <Clock size={14} className="mr-1" />
                 {pendingCount} Pending
               </Badge>
-            </div>
-
-            {/* Picked Status */}
-            <div className="text-xs text-muted-foreground">
-              Picked: <span className="font-bold text-foreground">{totalPicked}</span> / <span className="font-bold text-primary">{totalRequired}</span>
             </div>
           </div>
         </div>

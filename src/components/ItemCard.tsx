@@ -67,6 +67,15 @@ const ItemCard = ({ item }: ItemCardProps) => {
               </div>
 
               <div className="flex items-center gap-2">
+                <div className="px-3 py-1 bg-primary/10 rounded-md border border-primary/20">
+                  <p className="text-sm font-bold text-primary">{item.pickedQuantity}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Picked</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <div className="px-3 py-1 bg-accent/10 rounded-md border border-accent/20">
                   <p className="text-sm font-bold text-accent">{remainingQuantity}</p>
                 </div>
