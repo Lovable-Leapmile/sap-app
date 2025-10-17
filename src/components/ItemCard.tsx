@@ -27,7 +27,7 @@ interface ItemCardProps {
 
 const ItemCard = ({ item }: ItemCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [pickedQuantity, setPickedQuantity] = useState(item.pickedQuantity);
+  const remainingQuantity = item.quantity - item.pickedQuantity;
   const { toast } = useToast();
 
   const handleTrayRequest = (trayId: string) => {
@@ -67,17 +67,11 @@ const ItemCard = ({ item }: ItemCardProps) => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  value={pickedQuantity}
-                  onChange={(e) => setPickedQuantity(parseInt(e.target.value) || 0)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-20 h-8 text-center font-bold"
-                  min={0}
-                  max={item.quantity}
-                />
+                <div className="px-3 py-1 bg-accent/10 rounded-md border border-accent/20">
+                  <p className="text-sm font-bold text-accent">{remainingQuantity}</p>
+                </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Picked</p>
+                  <p className="text-xs text-muted-foreground">Remaining</p>
                 </div>
               </div>
             </div>
