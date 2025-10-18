@@ -34,7 +34,8 @@ const fetchSipOrders = async (): Promise<SipOrder[]> => {
     throw new Error("Failed to fetch orders");
   }
 
-  return response.json();
+  const data = await response.json();
+  return data.records || [];
 };
 
 const SipOrdersList = () => {
