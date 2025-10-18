@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Package, Calendar, Layers, CheckCircle2, Clock } from "lucide-react";
-import { orders } from "./Home";
+import { orders } from "@/data/oldOrders";
 import ItemCard from "@/components/ItemCard";
 
 const OrderDetails = () => {
@@ -27,8 +27,8 @@ const OrderDetails = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-foreground mb-2">Order Not Found</h2>
-          <Button onClick={() => navigate("/home")} variant="accent">
-            Back to Orders
+          <Button onClick={() => navigate("/")} variant="accent">
+            Back to Home
           </Button>
         </div>
       </div>
@@ -42,7 +42,7 @@ const OrderDetails = () => {
         <div className="container max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3 mb-4">
             <Button
-              onClick={() => navigate("/home")}
+              onClick={() => navigate("/")}
               variant="ghost"
               size="icon"
               className="text-foreground hover:bg-muted"
