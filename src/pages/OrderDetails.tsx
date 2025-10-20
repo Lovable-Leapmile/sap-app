@@ -1,118 +1,214 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Package, Calendar, Layers, CheckCircle2, Clock } from "lucide-react";
-import { orders } from "@/data/oldOrders";
-import ItemCard from "@/components/ItemCard";
+import { ArrowLeft, Package, RefreshCw } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Tag, Layers, CheckCircle2, Clock } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+interface OrderItem {
+  id: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  order_ref: string;
+  material: string;
+  quantity: number;
+  quantity_consumed: number;
+  activity: string;
+  movement_type: string;
+}
+
+const fetchOrderItems = async (orderRef: string): Promise<OrderItem[]> => {
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/?order_ref=${orderRef}&order_by_field=updated_at&order_by_type=DESC`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization:
+          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch order items");
+  }
+
+  const data = await response.json();
+  return data.records || [];
+};
+
+const formatTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+};
 
 const OrderDetails = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
 
-  const order = orders.find((o) => o.orderId === orderId);
+  const { data: items, isLoading, error, refetch } = useQuery({
+    queryKey: ["order-items", orderId],
+    queryFn: () => fetchOrderItems(orderId || ""),
+    enabled: !!orderId,
+    refetchInterval: 30000,
+  });
 
-  // Calculate stats
-  const pendingCount = order?.items.reduce((sum, item) => 
-    sum + item.trays.filter(tray => tray.status === "pending").length, 0
-  ) || 0;
-  const inStationCount = order?.items.reduce((sum, item) => 
-    sum + item.trays.filter(tray => tray.status === "in-station").length, 0
-  ) || 0;
-  const totalPicked = order?.items.reduce((sum, item) => sum + item.pickedQuantity, 0) || 0;
-  const totalRequired = order?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
-
-  if (!order) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Order Not Found</h2>
-          <Button onClick={() => navigate("/")} variant="accent">
-            Back to Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const handleRefresh = async () => {
+    toast({
+      title: "Refreshing items...",
+    });
+    await refetch();
+    toast({
+      title: "Items updated",
+      description: "Latest data loaded successfully",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-card border-b-2 border-border shadow-sm sticky top-0 z-10">
-        <div className="container max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="container max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/sap-orders")}
               variant="ghost"
               size="icon"
-              className="text-foreground hover:bg-muted"
+              className="text-foreground hover:bg-accent/10"
             >
               <ArrowLeft size={24} />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">Order Details</h1>
+            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+              <Package className="text-primary-foreground" size={24} />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Order {orderId}</h1>
           </div>
-
-          {/* Order Summary */}
-          <div className="bg-primary/5 rounded-xl p-4 border-2 border-primary/20 space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Package size={14} />
-                  <span className="font-medium">Order ID</span>
-                </div>
-                <p className="text-base font-bold text-foreground">{order.orderId}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Layers size={14} />
-                  <span className="font-medium">Items</span>
-                </div>
-                <p className="text-base font-bold text-primary">{order.totalItems}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar size={14} />
-                  <span className="font-medium">Date</span>
-                </div>
-                <p className="text-sm font-semibold text-foreground">{order.date}</p>
-              </div>
-            </div>
-
-            {/* Status Badges */}
-            <div className="flex gap-2">
-              <Badge className="bg-success text-success-foreground">
-                <CheckCircle2 size={14} className="mr-1" />
-                {inStationCount} In Station
-              </Badge>
-              <Badge className="bg-warning text-warning-foreground">
-                <Clock size={14} className="mr-1" />
-                {pendingCount} Pending
-              </Badge>
-            </div>
-
-            {/* Picked Status */}
-            <div className="text-sm">
-              <span className="text-muted-foreground">Picked: </span>
-              <span className="font-bold text-foreground">{totalPicked}</span>
-              <span className="text-muted-foreground"> / </span>
-              <span className="font-bold text-primary">{totalRequired}</span>
-            </div>
-          </div>
+          <Button
+            onClick={handleRefresh}
+            variant="ghost"
+            size="icon"
+            className="text-accent hover:bg-accent/10"
+          >
+            <RefreshCw size={24} />
+          </Button>
         </div>
       </header>
 
       {/* Items List */}
       <ScrollArea className="flex-1">
         <div className="container max-w-2xl mx-auto px-4 py-6 space-y-4">
-          <h2 className="text-lg font-bold text-foreground mb-4">
-            Items to Pick ({order.items.length})
-          </h2>
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="animate-spin text-primary" size={32} />
+            </div>
+          )}
 
-          {order.items.map((item) => (
-            <ItemCard key={item.itemId} item={item} />
-          ))}
+          {error && (
+            <div className="text-center py-12">
+              <p className="text-destructive font-semibold">Failed to load items</p>
+              <Button onClick={handleRefresh} variant="outline" className="mt-4">
+                Try Again
+              </Button>
+            </div>
+          )}
+
+          {items && items.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No items found for this order</p>
+            </div>
+          )}
+
+          {items && items.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground font-medium">
+                  {items.length} items in order
+                </p>
+              </div>
+
+              {items.map((item) => {
+                const remainingQuantity = item.quantity - item.quantity_consumed;
+                return (
+                  <Card
+                    key={item.id}
+                    className="p-5 bg-card hover:shadow-lg transition-all duration-300 border-2 border-border animate-fade-in cursor-pointer active:scale-[0.98]"
+                    onClick={() => navigate(`/trays/${orderId}/${item.material}`)}
+                  >
+                    <div className="space-y-4">
+                      {/* Header */}
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Tag className="text-primary" size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-muted-foreground font-medium">Item ID</p>
+                          </div>
+                          <p className="text-xl font-bold text-foreground">{item.material}</p>
+                        </div>
+                      </div>
+
+                      {/* Movement Type and Time */}
+                      <div className="grid grid-cols-2 gap-4 pl-15">
+                        <div className="flex items-center gap-2">
+                          <Package className="text-muted-foreground" size={16} />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Movement Type</p>
+                            <p className="text-sm font-semibold text-foreground">{item.movement_type}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Clock className="text-muted-foreground" size={16} />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Updated</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              {formatTime(item.updated_at)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Quantities */}
+                      <div className="grid grid-cols-3 gap-3 pl-15">
+                        <div className="flex items-center gap-2">
+                          <Layers className="text-primary" size={16} />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Total Qty</p>
+                            <p className="text-base font-bold text-primary">{item.quantity}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="text-success" size={16} />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Picked</p>
+                            <p className="text-base font-bold text-success">{item.quantity_consumed}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Package className="text-accent" size={16} />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Remaining</p>
+                            <p className="text-base font-bold text-accent">{remainingQuantity}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </>
+          )}
         </div>
       </ScrollArea>
     </div>

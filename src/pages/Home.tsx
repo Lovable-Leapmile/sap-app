@@ -93,8 +93,8 @@ const Home = () => {
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="container max-w-2xl mx-auto space-y-6">
-          {/* SIP Orders Button */}
-          <Card className="p-8 bg-card hover:shadow-xl transition-all duration-300 border-2 border-border hover:border-primary/50 cursor-pointer animate-fade-in" onClick={() => navigate("/sip-orders")}>
+          {/* SAP Orders Button */}
+          <Card className="p-8 bg-card hover:shadow-xl transition-all duration-300 border-2 border-border hover:border-primary/50 cursor-pointer animate-fade-in" onClick={() => navigate("/sap-orders")}>
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Package className="text-primary" size={48} />

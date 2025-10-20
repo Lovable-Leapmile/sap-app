@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import SapOrdersList from "./pages/SapOrdersList";
 import ScanTray from "./pages/ScanTray";
 import OrderDetails from "./pages/OrderDetails";
+import TraysForItem from "./pages/TraysForItem";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,9 +22,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/sip-orders" element={<SapOrdersList />} />
+          <Route path="/sap-orders" element={<SapOrdersList />} />
           <Route path="/scan-tray" element={<ScanTray />} />
           <Route path="/order/:orderId" element={<OrderDetails />} />
+          <Route path="/trays/:orderId/:itemId" element={<TraysForItem />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

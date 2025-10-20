@@ -7,20 +7,16 @@ import SapOrderCard from "@/components/SapOrderCard";
 import { toast } from "@/hooks/use-toast";
 
 interface SapOrder {
-  id: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
   order_ref: string;
-  material: string;
-  quantity: number;
-  quantity_consumed: number;
-  activity: string;
+  total_items: number;
+  pending_items: number;
+  completed_items: number;
+  order_status: string;
 }
 
 const fetchSapOrders = async (): Promise<SapOrder[]> => {
   const response = await fetch(
-    "https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/?status=active&order_by_field=updated_at&order_by_type=DESC",
+    "https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/get_unique_sap_orders?order_status=active",
     {
       headers: {
         accept: "application/json",
@@ -121,7 +117,7 @@ const SapOrdersList = () => {
               </div>
 
               {orders.map((order) => (
-                <SapOrderCard key={order.id} order={order} />
+                <SapOrderCard key={order.order_ref} order={order} />
               ))}
             </>
           )}
