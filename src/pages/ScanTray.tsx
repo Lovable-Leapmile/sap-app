@@ -273,6 +273,7 @@ const ScanTray = () => {
               <Button
                 variant="outline"
                 onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ["sapOrders"] });
                   setScannedTrayId(null);
                   setSelectedOrder(null);
                   setOrderId(null);
