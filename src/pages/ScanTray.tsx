@@ -297,18 +297,14 @@ const ScanTray = () => {
             {sapOrders && sapOrders.length > 0 && (
               <div className="space-y-3">
                 {sapOrders.map((order: SapOrder) => (
-                  <Card
-                    key={order.id}
-                    className="cursor-pointer hover:bg-accent/5 transition-colors"
-                    onClick={() => handleOrderClick(order)}
-                  >
+                  <Card key={order.id}>
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <CardTitle className="text-lg">Order #{order.order_ref}</CardTitle>
                         <Badge variant="secondary">ID: {order.id}</Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
+                    <CardContent className="space-y-3 text-sm">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <span className="text-muted-foreground">Item ID:</span>
@@ -347,6 +343,72 @@ const ScanTray = () => {
                           <p className="font-medium">{order.movement_type}</p>
                         </div>
                       )}
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() => handleOrderClick(order)}
+                          className="flex-1"
+                        >
+                          Pick Item
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const checkResponse = await fetch(
+                                `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${order.tray_id}&status=active&user_id=1&order_by_field=updated_at&order_by_type=ASC`,
+                                {
+                                  headers: {
+                                    accept: "application/json",
+                                    Authorization: `Bearer ${API_TOKEN}`,
+                                  },
+                                }
+                              );
+                              const checkData: OrderResponse = await checkResponse.json();
+                              
+                              if (checkResponse.ok && checkData.records && checkData.records.length > 0) {
+                                const currentOrderId = checkData.records[0].id;
+                                const releaseResponse = await fetch(
+                                  `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${currentOrderId}`,
+                                  {
+                                    method: "PATCH",
+                                    headers: {
+                                      accept: "application/json",
+                                      Authorization: `Bearer ${API_TOKEN}`,
+                                    },
+                                    body: "",
+                                  }
+                                );
+
+                                if (!releaseResponse.ok) {
+                                  throw new Error("Failed to release order");
+                                }
+
+                                toast({
+                                  title: "Tray Released",
+                                  description: "Tray has been released successfully",
+                                });
+
+                                queryClient.invalidateQueries({ queryKey: ["sapOrders", scannedTrayId] });
+                              } else {
+                                toast({
+                                  title: "No Active Order",
+                                  description: "No active order found for this tray",
+                                  variant: "destructive",
+                                });
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to release tray",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Release Tray
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
