@@ -162,11 +162,11 @@ const ScanTray = () => {
         description: `Picked ${quantityToPick} items from ${selectedOrder.tray_id}`,
       });
 
-      // Refresh the SAP orders list
-      queryClient.invalidateQueries({ queryKey: ["sapOrders", scannedTrayId] });
-
+      // Clear state and refresh the SAP orders list
       setSelectedOrder(null);
       setOrderId(null);
+      setQuantityToPick(1);
+      queryClient.invalidateQueries({ queryKey: ["sapOrders", scannedTrayId] });
     } catch (error) {
       toast({
         title: "Error",
@@ -388,6 +388,10 @@ const ScanTray = () => {
                                   description: "Tray has been released successfully",
                                 });
 
+                                // Clear state and refresh the list
+                                setSelectedOrder(null);
+                                setOrderId(null);
+                                setQuantityToPick(1);
                                 queryClient.invalidateQueries({ queryKey: ["sapOrders", scannedTrayId] });
                               } else {
                                 toast({
