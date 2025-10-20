@@ -82,12 +82,62 @@ const SipOrderCard = ({ order }: SipOrderCardProps) => {
     enabled: isDrawerOpen,
   });
 
-  const handleRetrieve = (tray: Tray) => {
-    toast({
-      title: "Tray Retrieved",
-      description: `Tray ${tray.tray_id} with ${tray.available_quantity} items`,
-    });
-    setIsDrawerOpen(false);
+  const handleRetrieve = async (tray: Tray) => {
+    try {
+      // First, check if tray is already requested
+      const checkResponse = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&status=active&user_id=1&order_by_field=updated_at&order_by_type=ASC`,
+        {
+          headers: {
+            accept: "application/json",
+            Authorization:
+              "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+          },
+        }
+      );
+
+      const checkData = await checkResponse.json();
+
+      // If tray is already requested (has active orders)
+      if (checkResponse.ok && checkData.records && checkData.records.length > 0) {
+        toast({
+          title: "Tray Already Requested",
+          description: `Tray ${tray.tray_id} is already in an active order`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If not requested, create a new order
+      const requestResponse = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            Authorization:
+              "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+          },
+          body: "",
+        }
+      );
+
+      if (!requestResponse.ok) {
+        throw new Error("Failed to request tray");
+      }
+
+      toast({
+        title: "Tray Requested Successfully",
+        description: `Tray ${tray.tray_id} with ${tray.available_quantity} items has been requested`,
+      });
+      setIsDrawerOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process tray request",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
