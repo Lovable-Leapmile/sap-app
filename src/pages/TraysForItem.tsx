@@ -86,17 +86,18 @@ const TraysForItem = () => {
   const [trayOrders, setTrayOrders] = useState<Map<string, TrayOrder>>(new Map());
 
   // Fetch in-storage trays
-  const { data: storageTrays, refetch: refetchStorage } = useQuery({
+  const { data: storageTrays, error: storageError, refetch: refetchStorage } = useQuery({
     queryKey: ["storage-trays", itemId],
     queryFn: () => fetchTrays(itemId || "", false),
     enabled: !!itemId,
     refetchInterval: 5000,
     gcTime: 0,
     staleTime: 0,
+    retry: false,
   });
 
   // Fetch in-station trays
-  const { data: stationTrays, refetch: refetchStation } = useQuery({
+  const { data: stationTrays, error: stationError, refetch: refetchStation } = useQuery({
     queryKey: ["station-trays", itemId],
     queryFn: async () => {
       const trays = await fetchTrays(itemId || "", true);
@@ -118,6 +119,7 @@ const TraysForItem = () => {
     refetchInterval: 5000,
     gcTime: 0,
     staleTime: 0,
+    retry: false,
   });
 
   const handleRefresh = async () => {
@@ -147,17 +149,14 @@ const TraysForItem = () => {
 
       const checkData = await checkResponse.json();
 
-      let order_id: number;
-
       // If order exists, use it
       if (checkResponse.ok && checkData.records && checkData.records.length > 0) {
-        order_id = checkData.records[0].id;
         toast({
-          title: "Using Existing Order",
-          description: `Order ID: ${order_id}`,
+          title: "Tray Already in Station",
+          description: `Tray ${tray.tray_id} is ready`,
         });
       } else {
-        // Create new order
+        // Create new order to retrieve tray
         const createResponse = await fetch(
           `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
           {
@@ -175,24 +174,19 @@ const TraysForItem = () => {
           throw new Error("Failed to create order");
         }
 
-        const createData = await createResponse.json();
-        order_id = createData.records[0].id;
-
         toast({
           title: "Tray Requested",
-          description: `Waiting for tray ${tray.tray_id} to arrive...`,
+          description: `Waiting for tray ${tray.tray_id} to arrive at station...`,
         });
       }
 
-      // Open picking dialog
-      setSelectedTray(tray);
-      setOrderIdInternal(order_id);
-      setQuantityToPick(1);
-      setIsPickingDialogOpen(true);
+      // Refresh trays to show updated status
+      queryClient.invalidateQueries({ queryKey: ["storage-trays"] });
+      queryClient.invalidateQueries({ queryKey: ["station-trays"] });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to process tray request",
+        description: "Failed to retrieve tray",
         variant: "destructive",
       });
     }
@@ -435,10 +429,13 @@ const TraysForItem = () => {
               </span>
             </h2>
             <div className="space-y-3">
-              {storageTrays && storageTrays.length === 0 && (
+              {storageError && (
+                <p className="text-center py-6 text-destructive">Failed to load storage trays</p>
+              )}
+              {!storageError && storageTrays && storageTrays.length === 0 && (
                 <p className="text-center py-6 text-muted-foreground">No trays in storage</p>
               )}
-              {storageTrays?.map((tray) => (
+              {!storageError && storageTrays?.map((tray) => (
                 <Card key={tray.id} className="p-4 border-2 border-border">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -485,10 +482,13 @@ const TraysForItem = () => {
               </span>
             </h2>
             <div className="space-y-3">
-              {stationTrays && stationTrays.length === 0 && (
+              {stationError && (
+                <p className="text-center py-6 text-destructive">Failed to load station trays</p>
+              )}
+              {!stationError && stationTrays && stationTrays.length === 0 && (
                 <p className="text-center py-6 text-muted-foreground">No trays in station</p>
               )}
-              {stationTrays?.map((tray) => {
+              {!stationError && stationTrays?.map((tray) => {
                 const trayOrder = trayOrders.get(tray.tray_id);
                 return (
                   <Card key={tray.id} className="p-4 border-2 border-primary/50 bg-primary/5">
