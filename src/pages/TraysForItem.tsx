@@ -133,6 +133,7 @@ const TraysForItem = () => {
     gcTime: 0,
     staleTime: 0,
     retry: false,
+    placeholderData: (previousData) => previousData,
   });
 
   // Fetch in-station trays
@@ -159,6 +160,7 @@ const TraysForItem = () => {
     gcTime: 0,
     staleTime: 0,
     retry: false,
+    placeholderData: (previousData) => previousData,
   });
 
   const handleRefresh = async () => {
@@ -512,58 +514,6 @@ const TraysForItem = () => {
             </Card>
           )}
 
-          {/* In Storage Trays */}
-          <div>
-            <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-              🏗 In Storage Trays
-              <span className="text-sm text-muted-foreground font-normal">
-                ({storageTrays?.length || 0})
-              </span>
-            </h2>
-            <div className="space-y-3">
-              {storageError && (
-                <p className="text-center py-6 text-destructive">Failed to load storage trays</p>
-              )}
-              {!storageError && storageTrays && storageTrays.length === 0 && (
-                <p className="text-center py-6 text-muted-foreground">No trays in storage</p>
-              )}
-              {!storageError && storageTrays?.map((tray) => (
-                <Card key={tray.id} className="p-4 border-2 border-border">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Package className="text-primary" size={20} />
-                        <span className="font-bold text-foreground text-lg">{tray.tray_id}</span>
-                      </div>
-                      <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                        {tray.tray_status}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Available: </span>
-                        <span className="font-bold text-foreground">{tray.available_quantity}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Inbound: </span>
-                        <span className="font-medium text-foreground">{tray.inbound_date}</span>
-                      </div>
-                    </div>
-
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Description: </span>
-                      <span className="font-medium text-foreground">{tray.item_description}</span>
-                    </div>
-
-                    <Button onClick={() => handleRetrieveTray(tray)} className="w-full">
-                      Retrieve Tray
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
 
           {/* In Station Trays */}
           <div>
@@ -641,6 +591,60 @@ const TraysForItem = () => {
               })}
             </div>
           </div>
+
+          {/* In Storage Trays */}
+          <div>
+            <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+              🏗 In Storage Trays
+              <span className="text-sm text-muted-foreground font-normal">
+                ({storageTrays?.length || 0})
+              </span>
+            </h2>
+            <div className="space-y-3">
+              {storageError && (
+                <p className="text-center py-6 text-destructive">Failed to load storage trays</p>
+              )}
+              {!storageError && storageTrays && storageTrays.length === 0 && (
+                <p className="text-center py-6 text-muted-foreground">No trays in storage</p>
+              )}
+              {!storageError && storageTrays?.map((tray) => (
+                <Card key={tray.id} className="p-4 border-2 border-border">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Package className="text-primary" size={20} />
+                        <span className="font-bold text-foreground text-lg">{tray.tray_id}</span>
+                      </div>
+                      <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                        {tray.tray_status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Available: </span>
+                        <span className="font-bold text-foreground">{tray.available_quantity}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Inbound: </span>
+                        <span className="font-medium text-foreground">{tray.inbound_date}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Description: </span>
+                      <span className="font-medium text-foreground">{tray.item_description}</span>
+                    </div>
+
+                    <Button onClick={() => handleRetrieveTray(tray)} className="w-full">
+                      Retrieve Tray
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+
         </div>
       </ScrollArea>
 
