@@ -328,13 +328,13 @@ const TraysForItem = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedTray || !orderId_internal || !orderId || !itemId) return;
+    if (!selectedTray || !orderId_internal || !currentItem || !itemId) return;
 
     setIsSubmitting(true);
     try {
-      // Submit picking transaction
+      // Submit picking transaction using SAP order item id
       const response = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId_internal}&item_id=${itemId}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}&sap_order_reference=${orderId}`,
+        `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId_internal}&item_id=${itemId}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}&sap_order_reference=${currentItem.id}`,
         {
           method: "POST",
           headers: {
