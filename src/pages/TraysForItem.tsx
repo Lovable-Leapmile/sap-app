@@ -116,7 +116,7 @@ const fetchSapOrderItem = async (orderRef: string, material: string): Promise<Sa
 
 const fetchTransactions = async (orderRef: string, itemId: string): Promise<Transaction[]> => {
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/transactions?order_type=outbound&order_ref=${orderRef}&item_id=${itemId}&order_by_field=updated_at&order_by_type=DESC`,
+    `https://robotmanagerv1test.qikpod.com/nanostore/transactions?order_ref=${orderRef}&item_id=${itemId}&order_by_field=updated_at&order_by_type=DESC`,
     {
       headers: {
         accept: "application/json",
