@@ -563,13 +563,13 @@ const TraysForItem = () => {
               </span>
             </h2>
             <div className="space-y-3">
-              {stationError && (
+              {stationError && !stationTrays && (
                 <p className="text-center py-6 text-destructive">Failed to load station trays</p>
               )}
               {!stationError && stationTrays && stationTrays.length === 0 && (
                 <p className="text-center py-6 text-muted-foreground">No trays in station</p>
               )}
-              {!stationError && stationTrays?.map((tray) => {
+              {stationTrays?.map((tray) => {
                 const trayOrder = trayOrders.get(tray.tray_id);
                 return (
                   <Card key={tray.tray_id} className="p-4 border-2 border-primary/50 bg-primary/5">
@@ -640,13 +640,13 @@ const TraysForItem = () => {
               </span>
             </h2>
             <div className="space-y-3">
-              {storageError && (
+              {storageError && !storageTrays && (
                 <p className="text-center py-6 text-destructive">Failed to load storage trays</p>
               )}
               {!storageError && storageTrays && storageTrays.length === 0 && (
                 <p className="text-center py-6 text-muted-foreground">No trays in storage</p>
               )}
-              {!storageError && storageTrays?.map((tray) => (
+              {storageTrays?.map((tray) => (
                 <Card key={tray.tray_id} className="p-4 border-2 border-border">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
