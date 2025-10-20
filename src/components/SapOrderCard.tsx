@@ -14,7 +14,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
-interface SipOrder {
+interface SapOrder {
   id: number;
   status: string;
   created_at: string;
@@ -26,8 +26,8 @@ interface SipOrder {
   activity: string;
 }
 
-interface SipOrderCardProps {
-  order: SipOrder;
+interface SapOrderCardProps {
+  order: SapOrder;
 }
 
 interface Tray {
@@ -72,7 +72,7 @@ const formatTime = (timestamp: string) => {
   });
 };
 
-const SipOrderCard = ({ order }: SipOrderCardProps) => {
+const SapOrderCard = ({ order }: SapOrderCardProps) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const remainingQuantity = order.quantity - order.quantity_consumed;
 
@@ -300,4 +300,4 @@ const SipOrderCard = ({ order }: SipOrderCardProps) => {
   );
 };
 
-export default SipOrderCard;
+export default SapOrderCard;

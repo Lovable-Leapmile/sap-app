@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Package, RefreshCw } from "lucide-react";
-import SipOrderCard from "@/components/SipOrderCard";
+import SapOrderCard from "@/components/SapOrderCard";
 import { toast } from "@/hooks/use-toast";
 
-interface SipOrder {
+interface SapOrder {
   id: number;
   status: string;
   created_at: string;
@@ -18,7 +18,7 @@ interface SipOrder {
   activity: string;
 }
 
-const fetchSipOrders = async (): Promise<SipOrder[]> => {
+const fetchSapOrders = async (): Promise<SapOrder[]> => {
   const response = await fetch(
     "https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/?status=active&order_by_field=updated_at&order_by_type=DESC",
     {
@@ -38,12 +38,12 @@ const fetchSipOrders = async (): Promise<SipOrder[]> => {
   return data.records || [];
 };
 
-const SipOrdersList = () => {
+const SapOrdersList = () => {
   const navigate = useNavigate();
 
   const { data: orders, isLoading, error, refetch } = useQuery({
-    queryKey: ["sip-orders"],
-    queryFn: fetchSipOrders,
+    queryKey: ["sap-orders"],
+    queryFn: fetchSapOrders,
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
@@ -75,7 +75,7 @@ const SipOrdersList = () => {
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
               <Package className="text-primary-foreground" size={24} />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">SIP Orders</h1>
+            <h1 className="text-2xl font-bold text-foreground">SAP Orders</h1>
           </div>
           <Button
             onClick={handleRefresh}
@@ -121,7 +121,7 @@ const SipOrdersList = () => {
               </div>
 
               {orders.map((order) => (
-                <SipOrderCard key={order.id} order={order} />
+                <SapOrderCard key={order.id} order={order} />
               ))}
             </>
           )}
@@ -131,4 +131,4 @@ const SipOrdersList = () => {
   );
 };
 
-export default SipOrdersList;
+export default SapOrdersList;
