@@ -33,6 +33,17 @@ interface TrayOrder {
   tray_id: string;
 }
 
+interface SapOrderItem {
+  id: number;
+  order_ref: string;
+  material: string;
+  movement_type: string;
+  quantity: number;
+  quantity_consumed: number;
+  plant: string;
+  storage_location: string;
+}
+
 const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> => {
   const response = await fetch(
     `https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&order_type=outbound&like=false&num_records=10&offset=0&order_flow=fifo`,
@@ -73,6 +84,26 @@ const fetchTrayOrder = async (trayId: string): Promise<TrayOrder | null> => {
   return data.records && data.records.length > 0 ? data.records[0] : null;
 };
 
+const fetchSapOrderItem = async (orderRef: string, material: string): Promise<SapOrderItem | null> => {
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/?order_ref=${orderRef}&material=${material}&order_by_field=updated_at&order_by_type=DESC`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization:
+          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return data.records && data.records.length > 0 ? data.records[0] : null;
+};
+
 const TraysForItem = () => {
   const { orderId, itemId } = useParams();
   const navigate = useNavigate();
@@ -84,6 +115,14 @@ const TraysForItem = () => {
   const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [trayOrders, setTrayOrders] = useState<Map<string, TrayOrder>>(new Map());
+
+  // Fetch current SAP order item details
+  const { data: currentItem } = useQuery({
+    queryKey: ["sap-order-item", orderId, itemId],
+    queryFn: () => fetchSapOrderItem(orderId || "", itemId || ""),
+    enabled: !!orderId && !!itemId,
+    refetchInterval: 5000,
+  });
 
   // Fetch in-storage trays
   const { data: storageTrays, error: storageError, refetch: refetchStorage } = useQuery({
@@ -420,6 +459,59 @@ const TraysForItem = () => {
       {/* Trays List */}
       <ScrollArea className="flex-1">
         <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
+          {/* Current Item Card */}
+          {currentItem && (
+            <Card className="p-4 border-2 border-primary bg-primary/5">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-foreground">Current Item</h2>
+                  <span className="text-xs font-semibold px-3 py-1 rounded bg-primary text-primary-foreground">
+                    {currentItem.movement_type}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Material ID</p>
+                    <p className="text-lg font-bold text-foreground">{currentItem.material}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Order Ref</p>
+                    <p className="text-lg font-bold text-foreground">{currentItem.order_ref}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Total Qty</p>
+                    <p className="text-base font-bold text-foreground">{currentItem.quantity}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Picked</p>
+                    <p className="text-base font-bold text-green-600 dark:text-green-400">{currentItem.quantity_consumed}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Remaining</p>
+                    <p className="text-base font-bold text-orange-600 dark:text-orange-400">
+                      {currentItem.quantity - currentItem.quantity_consumed}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Plant</p>
+                    <p className="text-sm font-medium text-foreground">{currentItem.plant}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Storage Location</p>
+                    <p className="text-sm font-medium text-foreground">{currentItem.storage_location}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* In Storage Trays */}
           <div>
             <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
