@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ const API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4
 
 const ScanTray = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showInput, setShowInput] = useState(false);
   const [trayId, setTrayId] = useState("");
   const [scannedTrayId, setScannedTrayId] = useState<string | null>(null);
@@ -160,6 +161,9 @@ const ScanTray = () => {
         title: "Success",
         description: `Picked ${quantityToPick} items from ${selectedOrder.tray_id}`,
       });
+
+      // Refresh the SAP orders list
+      queryClient.invalidateQueries({ queryKey: ["sapOrders", scannedTrayId] });
 
       setSelectedOrder(null);
       setOrderId(null);
