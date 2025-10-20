@@ -419,8 +419,7 @@ const ScanTray = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQuantityToPick(Math.min(remainingQuantity, quantityToPick + 1))}
-                  disabled={quantityToPick >= remainingQuantity}
+                  onClick={() => setQuantityToPick(quantityToPick + 1)}
                 >
                   <Plus size={20} />
                 </Button>
