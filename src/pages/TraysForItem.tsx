@@ -114,9 +114,9 @@ const fetchSapOrderItem = async (orderRef: string, material: string): Promise<Sa
   return data.records && data.records.length > 0 ? data.records[0] : null;
 };
 
-const fetchTransactions = async (sapOrderReference: string, itemId: string): Promise<Transaction[]> => {
+const fetchTransactions = async (orderRef: string, itemId: string): Promise<Transaction[]> => {
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/transactions?sap_order_reference=${sapOrderReference}&item_id=${itemId}&order_by_field=updated_at&order_by_type=DESC`,
+    `https://robotmanagerv1test.qikpod.com/nanostore/transactions?order_type=outbound&order_ref=${orderRef}&item_id=${itemId}&order_by_field=updated_at&order_by_type=DESC`,
     {
       headers: {
         accept: "application/json",
@@ -197,9 +197,9 @@ const TraysForItem = () => {
 
   // Fetch transactions history
   const { data: transactions } = useQuery({
-    queryKey: ["transactions", currentItem?.id, itemId],
-    queryFn: () => fetchTransactions(String(currentItem?.id || ""), itemId || ""),
-    enabled: !!currentItem?.id && !!itemId,
+    queryKey: ["transactions", orderId, itemId],
+    queryFn: () => fetchTransactions(orderId || "", itemId || ""),
+    enabled: !!orderId && !!itemId,
     refetchInterval: 5000,
     retry: false,
     placeholderData: (previousData) => previousData,
