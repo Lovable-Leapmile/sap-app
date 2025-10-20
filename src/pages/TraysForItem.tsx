@@ -127,7 +127,7 @@ const fetchTransactions = async (sapOrderReference: string, itemId: string): Pro
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch transactions");
+    return [];
   }
 
   const data = await response.json();
@@ -152,6 +152,8 @@ const TraysForItem = () => {
     queryFn: () => fetchSapOrderItem(orderId || "", itemId || ""),
     enabled: !!orderId && !!itemId,
     refetchInterval: 5000,
+    retry: false,
+    placeholderData: (previousData) => previousData,
   });
 
   // Fetch in-storage trays
@@ -195,10 +197,11 @@ const TraysForItem = () => {
 
   // Fetch transactions history
   const { data: transactions } = useQuery({
-    queryKey: ["transactions", orderId, itemId],
-    queryFn: () => fetchTransactions(orderId || "", itemId || ""),
-    enabled: !!orderId && !!itemId,
+    queryKey: ["transactions", currentItem?.id, itemId],
+    queryFn: () => fetchTransactions(String(currentItem?.id || ""), itemId || ""),
+    enabled: !!currentItem?.id && !!itemId,
     refetchInterval: 5000,
+    retry: false,
     placeholderData: (previousData) => previousData,
   });
 
