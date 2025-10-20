@@ -144,7 +144,6 @@ const TraysForItem = () => {
   const [quantityToPick, setQuantityToPick] = useState(1);
   const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [trayOrders, setTrayOrders] = useState<Map<string, TrayOrder>>(new Map());
 
   // Fetch current SAP order item details
   const { data: currentItem } = useQuery({
@@ -168,8 +167,8 @@ const TraysForItem = () => {
     placeholderData: (previousData) => previousData,
   });
 
-  // Fetch in-station trays
-  const { data: stationTrays, error: stationError, refetch: refetchStation } = useQuery({
+  // Fetch in-station trays with their orders
+  const { data: stationTraysData, error: stationError, refetch: refetchStation } = useQuery({
     queryKey: ["station-trays", itemId],
     queryFn: async () => {
       const trays = await fetchTrays(itemId || "", true);
@@ -183,9 +182,8 @@ const TraysForItem = () => {
           ordersMap.set(trays[index].tray_id, order);
         }
       });
-      setTrayOrders(ordersMap);
       
-      return trays;
+      return { trays, ordersMap };
     },
     enabled: !!itemId,
     refetchInterval: 5000,
@@ -194,6 +192,9 @@ const TraysForItem = () => {
     retry: false,
     placeholderData: (previousData) => previousData,
   });
+
+  const stationTrays = stationTraysData?.trays;
+  const trayOrders = stationTraysData?.ordersMap || new Map<string, TrayOrder>();
 
   // Fetch transactions history
   const { data: transactions } = useQuery({
