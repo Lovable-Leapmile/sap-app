@@ -161,8 +161,6 @@ const TraysForItem = () => {
     queryFn: () => fetchTrays(itemId || "", false),
     enabled: !!itemId,
     refetchInterval: 5000,
-    gcTime: 0,
-    staleTime: 0,
     retry: false,
     placeholderData: (previousData) => previousData,
   });
@@ -187,8 +185,6 @@ const TraysForItem = () => {
     },
     enabled: !!itemId,
     refetchInterval: 5000,
-    gcTime: 0,
-    staleTime: 0,
     retry: false,
     placeholderData: (previousData) => previousData,
   });
@@ -576,7 +572,7 @@ const TraysForItem = () => {
               {!stationError && stationTrays?.map((tray) => {
                 const trayOrder = trayOrders.get(tray.tray_id);
                 return (
-                  <Card key={tray.id} className="p-4 border-2 border-primary/50 bg-primary/5">
+                  <Card key={tray.tray_id} className="p-4 border-2 border-primary/50 bg-primary/5">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -651,7 +647,7 @@ const TraysForItem = () => {
                 <p className="text-center py-6 text-muted-foreground">No trays in storage</p>
               )}
               {!storageError && storageTrays?.map((tray) => (
-                <Card key={tray.id} className="p-4 border-2 border-border">
+                <Card key={tray.tray_id} className="p-4 border-2 border-border">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -701,7 +697,7 @@ const TraysForItem = () => {
                 <p className="text-center py-6 text-muted-foreground">No transaction history</p>
               )}
               {transactions?.map((transaction) => (
-                <Card key={transaction.id} className="p-4 border-2 border-border bg-card">
+                <Card key={`${transaction.id}-${transaction.created_at}`} className="p-4 border-2 border-border bg-card">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
