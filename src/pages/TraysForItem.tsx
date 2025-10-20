@@ -44,6 +44,16 @@ interface SapOrderItem {
   storage_location: string;
 }
 
+interface Transaction {
+  id: number;
+  user_name: string;
+  tray_id: string;
+  transaction_item_quantity: number;
+  station_friendly_name: string;
+  transaction_date: string;
+  created_at: string;
+}
+
 const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> => {
   const response = await fetch(
     `https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&order_type=outbound&like=false&num_records=10&offset=0&order_flow=fifo`,
@@ -104,6 +114,26 @@ const fetchSapOrderItem = async (orderRef: string, material: string): Promise<Sa
   return data.records && data.records.length > 0 ? data.records[0] : null;
 };
 
+const fetchTransactions = async (sapOrderReference: string, itemId: string): Promise<Transaction[]> => {
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/transactions?sap_order_reference=${sapOrderReference}&item_id=${itemId}&order_by_field=updated_at&order_by_type=DESC`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization:
+          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch transactions");
+  }
+
+  const data = await response.json();
+  return data.records || [];
+};
+
 const TraysForItem = () => {
   const { orderId, itemId } = useParams();
   const navigate = useNavigate();
@@ -160,6 +190,15 @@ const TraysForItem = () => {
     gcTime: 0,
     staleTime: 0,
     retry: false,
+    placeholderData: (previousData) => previousData,
+  });
+
+  // Fetch transactions history
+  const { data: transactions } = useQuery({
+    queryKey: ["transactions", orderId, itemId],
+    queryFn: () => fetchTransactions(orderId || "", itemId || ""),
+    enabled: !!orderId && !!itemId,
+    refetchInterval: 5000,
     placeholderData: (previousData) => previousData,
   });
 
@@ -639,6 +678,54 @@ const TraysForItem = () => {
                     <Button onClick={() => handleRetrieveTray(tray)} className="w-full">
                       Retrieve Tray
                     </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Transaction History */}
+          <div>
+            <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+              📋 History
+              <span className="text-sm text-muted-foreground font-normal">
+                ({transactions?.length || 0})
+              </span>
+            </h2>
+            <div className="space-y-3">
+              {transactions && transactions.length === 0 && (
+                <p className="text-center py-6 text-muted-foreground">No transaction history</p>
+              )}
+              {transactions?.map((transaction) => (
+                <Card key={transaction.id} className="p-4 border-2 border-border bg-card">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-foreground">Tray: {transaction.tray_id}</span>
+                      </div>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                        transaction.transaction_item_quantity < 0 
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                          : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                      }`}>
+                        Qty: {transaction.transaction_item_quantity}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">User: </span>
+                        <span className="font-medium text-foreground">{transaction.user_name}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Station: </span>
+                        <span className="font-medium text-foreground">{transaction.station_friendly_name}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(transaction.created_at).toLocaleString()}
+                    </div>
                   </div>
                 </Card>
               ))}
