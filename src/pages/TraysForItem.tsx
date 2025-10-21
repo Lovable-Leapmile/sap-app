@@ -151,6 +151,9 @@ const TraysForItem = () => {
     queryFn: () => fetchSapOrderItem(orderId || "", itemId || ""),
     enabled: !!orderId && !!itemId,
     retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     placeholderData: (previousData) => previousData,
   });
 
@@ -160,6 +163,9 @@ const TraysForItem = () => {
     queryFn: () => fetchTrays(itemId || "", false),
     enabled: !!itemId,
     retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     placeholderData: (previousData) => previousData,
   });
 
@@ -183,6 +189,9 @@ const TraysForItem = () => {
     },
     enabled: !!itemId,
     retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     placeholderData: (previousData) => previousData,
   });
 
@@ -195,6 +204,9 @@ const TraysForItem = () => {
     queryFn: () => fetchTransactions(orderId || "", itemId || ""),
     enabled: !!orderId && !!itemId,
     retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     placeholderData: (previousData) => previousData,
   });
 
