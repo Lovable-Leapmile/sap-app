@@ -144,6 +144,7 @@ const TraysForItem = () => {
   const [quantityToPick, setQuantityToPick] = useState(1);
   const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [releasingTrayId, setReleasingTrayId] = useState<string | null>(null);
 
   // Fetch current SAP order item details
   const { data: currentItem, refetch: refetchItem } = useQuery({
@@ -394,6 +395,7 @@ const TraysForItem = () => {
     }
 
     setIsSubmitting(true);
+    setReleasingTrayId(tray.tray_id);
     try {
       const response = await fetch(
         `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${existingOrder.id}`,
@@ -427,6 +429,7 @@ const TraysForItem = () => {
       });
     } finally {
       setIsSubmitting(false);
+      setReleasingTrayId(null);
     }
   };
 
@@ -622,7 +625,7 @@ const TraysForItem = () => {
                       <div className="grid grid-cols-2 gap-2">
                         <Button 
                           onClick={() => handleRelease(tray)} 
-                          disabled={isSubmitting || !trayOrder}
+                          disabled={isSubmitting || !trayOrder || releasingTrayId === tray.tray_id}
                           variant="outline"
                           className="w-full"
                         >
@@ -630,7 +633,7 @@ const TraysForItem = () => {
                         </Button>
                         <Button 
                           onClick={() => handlePickItem(tray)} 
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || releasingTrayId === tray.tray_id}
                           className="w-full"
                         >
                           📦 Pick Item
