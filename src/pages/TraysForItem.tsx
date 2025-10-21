@@ -789,12 +789,9 @@ const TraysForItem = () => {
             </Button>
           </div>
 
-          <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <DialogFooter>
             <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Submitting..." : "✅ Submit"}
-            </Button>
-            <Button onClick={handleReleaseFromDialog} disabled={isSubmitting} variant="outline" className="w-full">
-              {isSubmitting ? "Releasing..." : "🔁 Release"}
             </Button>
           </DialogFooter>
         </DialogContent>
