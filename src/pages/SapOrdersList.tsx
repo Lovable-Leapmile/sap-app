@@ -104,10 +104,7 @@ const SapOrdersList = () => {
 
           {error && (
             <div className="text-center py-12">
-              <p className="text-destructive font-semibold">Failed to load orders</p>
-              <Button onClick={handleRefresh} variant="outline" className="mt-4">
-                Try Again
-              </Button>
+              <p className="text-muted-foreground">No SAP orders available</p>
             </div>
           )}
 
