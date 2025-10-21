@@ -543,12 +543,29 @@ const TraysForItem = () => {
       {/* Trays List */}
       <ScrollArea className="flex-1">
         <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
+          {/* Order Summary Card */}
+          {currentItem && (
+            <Card className="p-5 bg-card border-2 border-primary shadow-lg animate-fade-in">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Package className="text-primary" size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Order ID</p>
+                    <p className="text-lg font-bold text-foreground">{currentItem.order_ref}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Current Item Card */}
           {currentItem && (
-            <Card className="p-4 border-2 border-primary bg-primary/5">
+            <Card className="p-5 bg-card border-2 border-border hover:shadow-lg transition-all duration-300 animate-fade-in">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-foreground">Current Item</h2>
+                  <h2 className="text-xl font-bold text-foreground">Item Details</h2>
                   <span className="text-xs font-semibold px-3 py-1 rounded bg-primary text-primary-foreground">
                     {currentItem.movement_type}
                   </span>
@@ -572,11 +589,11 @@ const TraysForItem = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Picked</p>
-                    <p className="text-base font-bold text-green-600 dark:text-green-400">{currentItem.quantity_consumed}</p>
+                    <p className="text-base font-bold text-success">{currentItem.quantity_consumed}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Remaining</p>
-                    <p className="text-base font-bold text-orange-600 dark:text-orange-400">
+                    <p className="text-base font-bold text-warning">
                       {currentItem.quantity - currentItem.quantity_consumed}
                     </p>
                   </div>
@@ -607,50 +624,59 @@ const TraysForItem = () => {
             </h2>
             <div className="space-y-3">
               {stationError && !stationTrays && (
-                <p className="text-center py-6 text-destructive">Failed to load station trays</p>
+                <Card className="p-6 border-2 border-destructive/50 bg-destructive/5">
+                  <p className="text-center text-destructive font-medium">Failed to load station trays</p>
+                </Card>
               )}
               {!stationError && stationTrays && stationTrays.length === 0 && (
-                <p className="text-center py-6 text-muted-foreground">No trays in station</p>
+                <Card className="p-6 border-2 border-border bg-muted/30">
+                  <p className="text-center text-muted-foreground font-medium">No trays in station for this item</p>
+                </Card>
               )}
               {stationTrays?.map((tray) => {
                 const trayOrder = trayOrders.get(tray.tray_id);
                 return (
-                  <Card key={tray.tray_id} className="p-4 border-2 border-primary/50 bg-primary/5">
+                  <Card key={tray.tray_id} className="p-5 border-2 border-primary/50 bg-primary/5 hover:shadow-lg transition-all duration-300 animate-fade-in">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Package className="text-primary" size={20} />
-                          <span className="font-bold text-foreground text-lg">{tray.tray_id}</span>
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Package className="text-primary" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground font-medium">Tray ID</p>
+                            <p className="text-lg font-bold text-foreground">{tray.tray_id}</p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-end gap-1">
                           {trayOrder && (
-                            <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                              Station: {trayOrder.station_friendly_name}
+                            <span className="text-xs font-semibold px-2 py-1 rounded bg-accent/20 text-accent-foreground">
+                              {trayOrder.station_friendly_name}
                             </span>
                           )}
-                          <span className="text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                          <span className="text-xs font-semibold px-2 py-1 rounded bg-success text-success-foreground">
                             In Station
                           </span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Available: </span>
-                          <span className="font-bold text-foreground">{tray.available_quantity}</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Available</p>
+                          <p className="text-base font-bold text-foreground">{tray.available_quantity}</p>
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">Inbound: </span>
-                          <span className="font-medium text-foreground">{tray.inbound_date}</span>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Inbound Date</p>
+                          <p className="text-sm font-medium text-foreground">{tray.inbound_date}</p>
                         </div>
                       </div>
 
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Description: </span>
-                        <span className="font-medium text-foreground">{tray.item_description}</span>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Description</p>
+                        <p className="text-sm font-medium text-foreground">{tray.item_description}</p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2 pt-2">
                         <Button 
                           onClick={() => handleRelease(tray)} 
                           disabled={isSubmitting || !trayOrder || releasingTrayId === tray.tray_id}
@@ -684,38 +710,47 @@ const TraysForItem = () => {
             </h2>
             <div className="space-y-3">
               {storageError && !storageTrays && (
-                <p className="text-center py-6 text-destructive">Failed to load storage trays</p>
+                <Card className="p-6 border-2 border-destructive/50 bg-destructive/5">
+                  <p className="text-center text-destructive font-medium">Failed to load storage trays</p>
+                </Card>
               )}
               {!storageError && storageTrays && storageTrays.length === 0 && (
-                <p className="text-center py-6 text-muted-foreground">No trays in storage</p>
+                <Card className="p-6 border-2 border-border bg-muted/30">
+                  <p className="text-center text-muted-foreground font-medium">No trays in storage for this item</p>
+                </Card>
               )}
               {storageTrays?.map((tray) => (
-                <Card key={tray.tray_id} className="p-4 border-2 border-border">
+                <Card key={tray.tray_id} className="p-5 border-2 border-border hover:shadow-lg transition-all duration-300 animate-fade-in">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Package className="text-primary" size={20} />
-                        <span className="font-bold text-foreground text-lg">{tray.tray_id}</span>
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Package className="text-primary" size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground font-medium">Tray ID</p>
+                          <p className="text-lg font-bold text-foreground">{tray.tray_id}</p>
+                        </div>
                       </div>
-                      <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                      <span className="text-xs font-semibold px-2 py-1 rounded bg-accent/20 text-accent-foreground">
                         {tray.tray_status}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Available: </span>
-                        <span className="font-bold text-foreground">{tray.available_quantity}</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Available</p>
+                        <p className="text-base font-bold text-foreground">{tray.available_quantity}</p>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Inbound: </span>
-                        <span className="font-medium text-foreground">{tray.inbound_date}</span>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Inbound Date</p>
+                        <p className="text-sm font-medium text-foreground">{tray.inbound_date}</p>
                       </div>
                     </div>
 
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Description: </span>
-                      <span className="font-medium text-foreground">{tray.item_description}</span>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Description</p>
+                      <p className="text-sm font-medium text-foreground">{tray.item_description}</p>
                     </div>
 
                     <Button 
