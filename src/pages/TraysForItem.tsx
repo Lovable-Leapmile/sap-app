@@ -758,7 +758,7 @@ const TraysForItem = () => {
           {/* Transaction History */}
           <div>
             <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-              📋 History
+              📋 Picked Items
               <span className="text-sm text-muted-foreground font-normal">
                 ({transactions?.length || 0})
               </span>
