@@ -105,6 +105,65 @@ const OrderDetails = () => {
       {/* Items List */}
       <ScrollArea className="flex-1">
         <div className="container max-w-2xl mx-auto px-4 py-6 space-y-4">
+          {/* Order Summary Card */}
+          {items && items.length > 0 && (
+            <Card className="p-5 bg-card border-2 border-border shadow-sm animate-fade-in mb-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 space-y-3">
+                  {/* Order ID */}
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Package className="text-primary" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Order ID</p>
+                      <p className="text-lg font-bold text-foreground">{orderId}</p>
+                    </div>
+                  </div>
+
+                  {/* Order Details */}
+                  <div className="space-y-3 pl-12">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2">
+                        <Layers className="text-muted-foreground" size={16} />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Items</p>
+                          <p className="text-base font-bold text-primary">{items.length}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Clock className="text-muted-foreground" size={16} />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Last Updated</p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {formatTime(items[0].updated_at)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Summary */}
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-md bg-success/10 border border-success/20">
+                        <CheckCircle2 size={14} className="text-success" />
+                        <span className="text-sm font-semibold text-success">
+                          {items.reduce((sum, item) => sum + item.quantity_consumed, 0)} Picked
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-md bg-accent/10 border border-accent/20">
+                        <Package size={14} className="text-accent" />
+                        <span className="text-sm font-semibold text-accent">
+                          {items.reduce((sum, item) => sum + (item.quantity - item.quantity_consumed), 0)} Remaining
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {isLoading && (
             <div className="flex items-center justify-center py-12">
               <RefreshCw className="animate-spin text-primary" size={32} />
