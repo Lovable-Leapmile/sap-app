@@ -772,8 +772,15 @@ const TraysForItem = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setQuantityToPick(Math.min(selectedTray?.available_quantity || 1, quantityToPick + 1))}
-              disabled={quantityToPick >= (selectedTray?.available_quantity || 1)}
+              onClick={() => {
+                const remainingQty = currentItem ? currentItem.quantity - currentItem.quantity_consumed : 0;
+                const maxQty = Math.min(selectedTray?.available_quantity || 1, remainingQty);
+                setQuantityToPick(Math.min(maxQty, quantityToPick + 1));
+              }}
+              disabled={quantityToPick >= Math.min(
+                selectedTray?.available_quantity || 1,
+                currentItem ? currentItem.quantity - currentItem.quantity_consumed : 1
+              )}
             >
               <Plus size={20} />
             </Button>
