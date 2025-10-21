@@ -598,17 +598,6 @@ const TraysForItem = () => {
                     </p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Plant</p>
-                    <p className="text-sm font-medium text-foreground">{currentItem.plant}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Storage Location</p>
-                    <p className="text-sm font-medium text-foreground">{currentItem.storage_location}</p>
-                  </div>
-                </div>
               </div>
             </Card>
           )}
