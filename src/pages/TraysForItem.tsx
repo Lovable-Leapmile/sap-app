@@ -146,11 +146,10 @@ const TraysForItem = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch current SAP order item details
-  const { data: currentItem } = useQuery({
+  const { data: currentItem, refetch: refetchItem } = useQuery({
     queryKey: ["sap-order-item", orderId, itemId],
     queryFn: () => fetchSapOrderItem(orderId || "", itemId || ""),
     enabled: !!orderId && !!itemId,
-    refetchInterval: 5000,
     retry: false,
     placeholderData: (previousData) => previousData,
   });
@@ -160,7 +159,6 @@ const TraysForItem = () => {
     queryKey: ["storage-trays", itemId],
     queryFn: () => fetchTrays(itemId || "", false),
     enabled: !!itemId,
-    refetchInterval: 5000,
     retry: false,
     placeholderData: (previousData) => previousData,
   });
@@ -184,7 +182,6 @@ const TraysForItem = () => {
       return { trays, ordersMap };
     },
     enabled: !!itemId,
-    refetchInterval: 5000,
     retry: false,
     placeholderData: (previousData) => previousData,
   });
@@ -197,7 +194,6 @@ const TraysForItem = () => {
     queryKey: ["transactions", orderId, itemId],
     queryFn: () => fetchTransactions(orderId || "", itemId || ""),
     enabled: !!orderId && !!itemId,
-    refetchInterval: 5000,
     retry: false,
     placeholderData: (previousData) => previousData,
   });
@@ -357,8 +353,11 @@ const TraysForItem = () => {
       setOrderIdInternal(null);
       setQuantityToPick(1);
       
+      // Refresh item data and trays
+      await refetchItem();
       queryClient.invalidateQueries({ queryKey: ["storage-trays"] });
       queryClient.invalidateQueries({ queryKey: ["station-trays"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
     } catch (error) {
       toast({
         title: "Error",

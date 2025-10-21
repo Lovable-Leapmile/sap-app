@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Package, RefreshCw } from "lucide-react";
 import SapOrderCard from "@/components/SapOrderCard";
 import { toast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 interface SapOrder {
   order_ref: string;
@@ -36,12 +37,20 @@ const fetchSapOrders = async (): Promise<SapOrder[]> => {
 
 const SapOrdersList = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: orders, isLoading, error, refetch } = useQuery({
     queryKey: ["sap-orders"],
     queryFn: fetchSapOrders,
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
+
+  // Clear cache when error occurs
+  useEffect(() => {
+    if (error) {
+      queryClient.removeQueries({ queryKey: ["sap-orders"] });
+    }
+  }, [error, queryClient]);
 
   const handleRefresh = async () => {
     toast({
