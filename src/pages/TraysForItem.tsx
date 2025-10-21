@@ -67,7 +67,7 @@ const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> =
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch trays");
+    return [];
   }
 
   const data = await response.json();
@@ -204,19 +204,7 @@ const TraysForItem = () => {
     placeholderData: (previousData) => previousData,
   });
 
-  // Clear cache when APIs fail
-  useEffect(() => {
-    if (storageError) {
-      queryClient.removeQueries({ queryKey: ["storage-trays", itemId] });
-    }
-  }, [storageError, queryClient, itemId]);
-
-  useEffect(() => {
-    if (stationError) {
-      queryClient.removeQueries({ queryKey: ["station-trays", itemId] });
-    }
-  }, [stationError, queryClient, itemId]);
-
+  // Clear cache when transactions API fails
   useEffect(() => {
     if (transactionsError) {
       queryClient.removeQueries({ queryKey: ["transactions", orderId, itemId] });
