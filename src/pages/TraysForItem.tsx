@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Package, RefreshCw, Minus, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -163,9 +163,7 @@ const TraysForItem = () => {
     queryFn: () => fetchTrays(itemId || "", false),
     enabled: !!itemId,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchInterval: 5000,
     placeholderData: (previousData) => previousData,
   });
 
@@ -189,9 +187,7 @@ const TraysForItem = () => {
     },
     enabled: !!itemId,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchInterval: 5000,
     placeholderData: (previousData) => previousData,
   });
 
@@ -199,16 +195,33 @@ const TraysForItem = () => {
   const trayOrders = stationTraysData?.ordersMap || new Map<string, TrayOrder>();
 
   // Fetch transactions history
-  const { data: transactions } = useQuery({
+  const { data: transactions, error: transactionsError } = useQuery({
     queryKey: ["transactions", orderId, itemId],
     queryFn: () => fetchTransactions(orderId || "", itemId || ""),
     enabled: !!orderId && !!itemId,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchInterval: 5000,
     placeholderData: (previousData) => previousData,
   });
+
+  // Clear cache when APIs fail
+  useEffect(() => {
+    if (storageError) {
+      queryClient.removeQueries({ queryKey: ["storage-trays", itemId] });
+    }
+  }, [storageError, queryClient, itemId]);
+
+  useEffect(() => {
+    if (stationError) {
+      queryClient.removeQueries({ queryKey: ["station-trays", itemId] });
+    }
+  }, [stationError, queryClient, itemId]);
+
+  useEffect(() => {
+    if (transactionsError) {
+      queryClient.removeQueries({ queryKey: ["transactions", orderId, itemId] });
+    }
+  }, [transactionsError, queryClient, orderId, itemId]);
 
   const handleRefresh = async () => {
     toast({
