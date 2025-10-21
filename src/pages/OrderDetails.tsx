@@ -6,6 +6,7 @@ import { ArrowLeft, Package, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tag, Layers, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
 interface OrderItem {
   id: number;
   status: string;
@@ -18,60 +19,71 @@ interface OrderItem {
   activity: string;
   movement_type: string;
 }
+
 const fetchOrderItems = async (orderRef: string): Promise<OrderItem[]> => {
-  const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/?order_ref=${orderRef}&order_by_field=updated_at&order_by_type=DESC`, {
-    headers: {
-      accept: "application/json",
-      Authorization: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ"
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/?order_ref=${orderRef}&order_by_field=updated_at&order_by_type=DESC`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization:
+          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+      },
     }
-  });
+  );
+
   if (!response.ok) {
     throw new Error("Failed to fetch order items");
   }
+
   const data = await response.json();
   return data.records || [];
 };
+
 const formatTime = (timestamp: string) => {
   const date = new Date(timestamp);
   return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: false
+    hour12: false,
   });
 };
+
 const OrderDetails = () => {
-  const {
-    orderId
-  } = useParams();
+  const { orderId } = useParams();
   const navigate = useNavigate();
-  const {
-    data: items,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
+
+  const { data: items, isLoading, error, refetch } = useQuery({
     queryKey: ["order-items", orderId],
     queryFn: () => fetchOrderItems(orderId || ""),
     enabled: !!orderId,
-    refetchInterval: 30000
+    refetchInterval: 30000,
   });
+
   const handleRefresh = async () => {
     toast({
-      title: "Refreshing items..."
+      title: "Refreshing items...",
     });
     await refetch();
     toast({
       title: "Items updated",
-      description: "Latest data loaded successfully"
+      description: "Latest data loaded successfully",
     });
   };
-  return <div className="min-h-screen bg-background flex flex-col">
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-card border-b-2 border-border shadow-sm sticky top-0 z-10">
         <div className="container max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button onClick={() => navigate("/sap-orders")} variant="ghost" size="icon" className="text-foreground hover:bg-accent/10">
+            <Button
+              onClick={() => navigate("/sap-orders")}
+              variant="ghost"
+              size="icon"
+              className="text-foreground hover:bg-accent/10"
+            >
               <ArrowLeft size={24} />
             </Button>
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
@@ -79,7 +91,12 @@ const OrderDetails = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground">Order {orderId}</h1>
           </div>
-          <Button onClick={handleRefresh} variant="ghost" size="icon" className="text-accent hover:bg-accent/10">
+          <Button
+            onClick={handleRefresh}
+            variant="ghost"
+            size="icon"
+            className="text-accent hover:bg-accent/10"
+          >
             <RefreshCw size={24} />
           </Button>
         </div>
@@ -88,34 +105,115 @@ const OrderDetails = () => {
       {/* Items List */}
       <ScrollArea className="flex-1">
         <div className="container max-w-2xl mx-auto px-4 py-6 space-y-4">
-          {isLoading && <div className="flex items-center justify-center py-12">
-              <RefreshCw className="animate-spin text-primary" size={32} />
-            </div>}
+          {/* Order Summary Card */}
+          {items && items.length > 0 && (
+            <Card className="p-5 bg-card border-2 border-border shadow-sm animate-fade-in mb-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 space-y-3">
+                  {/* Order ID */}
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Package className="text-primary" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Order ID</p>
+                      <p className="text-lg font-bold text-foreground">{orderId}</p>
+                    </div>
+                  </div>
 
-          {error && <div className="text-center py-12">
+                  {/* Order Details */}
+                  <div className="space-y-3 pl-12">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2">
+                        <Layers className="text-muted-foreground" size={16} />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Items</p>
+                          <p className="text-base font-bold text-primary">{items.length}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Clock className="text-muted-foreground" size={16} />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Last Updated</p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {formatTime(items[0].updated_at)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Summary */}
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-md bg-success/10 border border-success/20">
+                        <CheckCircle2 size={14} className="text-success" />
+                        <span className="text-sm font-semibold text-success">
+                          {items.reduce((sum, item) => sum + item.quantity_consumed, 0)} Picked
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-md bg-accent/10 border border-accent/20">
+                        <Package size={14} className="text-accent" />
+                        <span className="text-sm font-semibold text-accent">
+                          {items.reduce((sum, item) => sum + (item.quantity - item.quantity_consumed), 0)} Remaining
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="animate-spin text-primary" size={32} />
+            </div>
+          )}
+
+          {error && (
+            <div className="text-center py-12">
               <p className="text-destructive font-semibold">Failed to load items</p>
               <Button onClick={handleRefresh} variant="outline" className="mt-4">
                 Try Again
               </Button>
-            </div>}
+            </div>
+          )}
 
-          {items && items.length === 0 && <div className="text-center py-12">
+          {items && items.length === 0 && (
+            <div className="text-center py-12">
               <p className="text-muted-foreground">No items found for this order</p>
-            </div>}
+            </div>
+          )}
 
-          {items && items.length > 0 && <>
+          {items && items.length > 0 && (
+            <>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-muted-foreground font-medium">
                   {items.length} items in order
                 </p>
               </div>
 
-              {items.map(item => {
-            const remainingQuantity = item.quantity - item.quantity_consumed;
-            return <Card key={item.id} className="p-5 bg-card hover:shadow-lg transition-all duration-300 border-2 border-border animate-fade-in cursor-pointer active:scale-[0.98]" onClick={() => navigate(`/trays/${orderId}/${item.material}`)}>
+              {items.map((item) => {
+                const remainingQuantity = item.quantity - item.quantity_consumed;
+                return (
+                  <Card
+                    key={item.id}
+                    className="p-5 bg-card hover:shadow-lg transition-all duration-300 border-2 border-border animate-fade-in cursor-pointer active:scale-[0.98]"
+                    onClick={() => navigate(`/trays/${orderId}/${item.material}`)}
+                  >
                     <div className="space-y-4">
                       {/* Header */}
-                      
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Tag className="text-primary" size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-muted-foreground font-medium">Item ID</p>
+                          </div>
+                          <p className="text-xl font-bold text-foreground">{item.material}</p>
+                        </div>
+                      </div>
 
                       {/* Movement Type and Time */}
                       <div className="grid grid-cols-2 gap-4 pl-15">
@@ -165,11 +263,15 @@ const OrderDetails = () => {
                         </div>
                       </div>
                     </div>
-                  </Card>;
-          })}
-            </>}
+                  </Card>
+                );
+              })}
+            </>
+          )}
         </div>
       </ScrollArea>
-    </div>;
+    </div>
+  );
 };
+
 export default OrderDetails;
