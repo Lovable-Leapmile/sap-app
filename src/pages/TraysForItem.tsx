@@ -145,6 +145,7 @@ const TraysForItem = () => {
   const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [releasingTrayId, setReleasingTrayId] = useState<string | null>(null);
+  const [retrievingTrayId, setRetrievingTrayId] = useState<string | null>(null);
 
   // Fetch current SAP order item details
   const { data: currentItem, refetch: refetchItem } = useQuery({
@@ -224,6 +225,7 @@ const TraysForItem = () => {
   };
 
   const handleRetrieveTray = async (tray: Tray) => {
+    setRetrievingTrayId(tray.tray_id);
     try {
       // Check for existing order
       const checkResponse = await fetch(
@@ -279,6 +281,8 @@ const TraysForItem = () => {
         description: "Failed to retrieve tray",
         variant: "destructive",
       });
+    } finally {
+      setRetrievingTrayId(null);
     }
   };
 
@@ -690,7 +694,11 @@ const TraysForItem = () => {
                       <span className="font-medium text-foreground">{tray.item_description}</span>
                     </div>
 
-                    <Button onClick={() => handleRetrieveTray(tray)} className="w-full">
+                    <Button 
+                      onClick={() => handleRetrieveTray(tray)} 
+                      disabled={retrievingTrayId === tray.tray_id}
+                      className="w-full"
+                    >
                       Retrieve Tray
                     </Button>
                   </div>
