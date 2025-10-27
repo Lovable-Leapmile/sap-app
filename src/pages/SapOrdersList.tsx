@@ -43,12 +43,15 @@ const SapOrdersList = () => {
     queryKey: ["sap-orders"],
     queryFn: fetchSapOrders,
     refetchInterval: 30000, // Auto-refresh every 30 seconds
+    retry: false, // Don't retry on failure
+    staleTime: 0, // Data is immediately stale
+    gcTime: 0, // Don't cache failed requests
   });
 
   // Clear cache when error occurs
   useEffect(() => {
     if (error) {
-      queryClient.removeQueries({ queryKey: ["sap-orders"] });
+      queryClient.clear(); // Clear all cache to prevent stale data
     }
   }, [error, queryClient]);
 
