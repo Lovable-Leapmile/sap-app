@@ -676,7 +676,11 @@ const TraysForItem = () => {
                         </Button>
                         <Button 
                           onClick={() => handlePickItem(tray)} 
-                          disabled={isSubmitting || releasingTrayId === tray.tray_id}
+                          disabled={
+                            isSubmitting || 
+                            releasingTrayId === tray.tray_id || 
+                            (currentItem && currentItem.quantity_consumed >= currentItem.quantity)
+                          }
                           className="w-full"
                         >
                           📦 Pick Item
