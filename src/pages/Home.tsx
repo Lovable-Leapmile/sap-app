@@ -107,17 +107,7 @@ const Home = () => {
           </Card>
 
           {/* Scan Tray in Station Button */}
-          <Card className="p-8 bg-card hover:shadow-xl transition-all duration-300 border-2 border-border hover:border-accent/50 cursor-pointer animate-fade-in" onClick={() => navigate("/scan-tray")}>
-            <div className="flex flex-col items-center gap-4 text-center">
-              <div className="h-20 w-20 rounded-2xl bg-accent/10 flex items-center justify-center">
-                <Scan className="text-accent" size={48} />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-foreground mb-2">Scan Tray in Station</h2>
-                <p className="text-muted-foreground">Scan and process trays</p>
-              </div>
-            </div>
-          </Card>
+          
 
           {/* Upload SAP Button */}
           <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
