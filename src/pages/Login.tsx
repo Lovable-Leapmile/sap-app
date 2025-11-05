@@ -25,7 +25,7 @@ const Login = () => {
         title: "Login Successful",
         description: "Welcome to SAP Warehouse",
       });
-      navigate("/");
+      navigate("/home");
     } else {
       toast({
         title: "Login Failed",

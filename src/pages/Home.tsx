@@ -13,7 +13,7 @@ const Home = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleLogout = () => {
-    navigate("/login");
+    navigate("/");
   };
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
