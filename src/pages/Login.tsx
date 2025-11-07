@@ -13,23 +13,44 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Static credentials validation
-    const validCredentials = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-    const validPassword = "567890";
-    
-    if (validCredentials.includes(phoneNumber) && password === validPassword) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome to SAP Warehouse",
-      });
-      navigate("/home");
-    } else {
+    try {
+      const response = await fetch(
+        `https://robotmanagerv1test.qikpod.com/user/validate?user_phone=${encodeURIComponent(phoneNumber)}&password=${encodeURIComponent(password)}`,
+        {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.status === "success") {
+        // Store token and user info in localStorage
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userName', data.user_name);
+        localStorage.setItem('userId', data.user_id.toString());
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome ${data.user_name}`,
+        });
+        navigate("/home");
+      } else {
+        toast({
+          title: "Login Failed",
+          description: data.message || "Invalid credentials. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
         title: "Login Failed",
-        description: "Invalid credentials. Please try again.",
+        description: "Unable to connect to server. Please try again.",
         variant: "destructive",
       });
     }
