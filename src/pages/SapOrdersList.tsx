@@ -16,13 +16,14 @@ interface SapOrder {
 }
 
 const fetchSapOrders = async (): Promise<SapOrder[]> => {
+  const authToken = localStorage.getItem('authToken');
+  
   const response = await fetch(
     "https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/get_unique_sap_orders?order_status=active",
     {
       headers: {
         accept: "application/json",
-        Authorization:
-          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+        Authorization: `Bearer ${authToken}`,
       },
     }
   );
@@ -38,6 +39,14 @@ const fetchSapOrders = async (): Promise<SapOrder[]> => {
 const SapOrdersList = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const { data: orders, isLoading, error, refetch } = useQuery({
     queryKey: ["sap-orders"],
