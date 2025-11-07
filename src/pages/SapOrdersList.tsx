@@ -73,7 +73,7 @@ const SapOrdersList = () => {
         <div className="container max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
               variant="ghost"
               size="icon"
               className="text-foreground hover:bg-accent/10"
