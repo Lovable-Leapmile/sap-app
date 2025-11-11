@@ -1,0 +1,345 @@
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, FileText, Upload, RefreshCw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useEffect, useState, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface ReconcileRecord {
+  material: string;
+  sap_quantity: number;
+  item_quantity: number;
+  quantity_difference: number;
+  reconcile_status: string;
+}
+
+const fetchReconcileData = async (status: string): Promise<ReconcileRecord[]> => {
+  const authToken = localStorage.getItem('authToken');
+  
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/sap_reconcile/report?reconcile_status=${status}&num_records=100&offset=0`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch reconcile data");
+  }
+
+  const data = await response.json();
+  return data.records || [];
+};
+
+const SapReconcile = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("sap_shortage");
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  const { data: sapShortageData, isLoading: sapShortageLoading, refetch: refetchSapShortage } = useQuery({
+    queryKey: ["reconcile-sap-shortage"],
+    queryFn: () => fetchReconcileData("sap_shortage"),
+    enabled: activeTab === "sap_shortage",
+  });
+
+  const { data: robotShortageData, isLoading: robotShortageLoading, refetch: refetchRobotShortage } = useQuery({
+    queryKey: ["reconcile-robot-shortage"],
+    queryFn: () => fetchReconcileData("robot_shortage"),
+    enabled: activeTab === "robot_shortage",
+  });
+
+  const { data: matchedData, isLoading: matchedLoading, refetch: refetchMatched } = useQuery({
+    queryKey: ["reconcile-matched"],
+    queryFn: () => fetchReconcileData("matched"),
+    enabled: activeTab === "matched",
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const authToken = localStorage.getItem('authToken');
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('https://robotmanagerv1test.qikpod.com/nanostore/sap_reconcile/upload_file', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "SAP Reconcile file uploaded successfully"
+      });
+      setSelectedFile(null);
+      setIsUploadDialogOpen(false);
+      // Refetch all data
+      queryClient.invalidateQueries({ queryKey: ["reconcile-sap-shortage"] });
+      queryClient.invalidateQueries({ queryKey: ["reconcile-robot-shortage"] });
+      queryClient.invalidateQueries({ queryKey: ["reconcile-matched"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to upload SAP Reconcile file",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUpload = () => {
+    if (selectedFile) {
+      uploadMutation.mutate(selectedFile);
+    }
+  };
+
+  const handleRefresh = async () => {
+    toast({
+      title: "Refreshing data...",
+    });
+    
+    if (activeTab === "sap_shortage") {
+      await refetchSapShortage();
+    } else if (activeTab === "robot_shortage") {
+      await refetchRobotShortage();
+    } else {
+      await refetchMatched();
+    }
+    
+    toast({
+      title: "Data updated",
+      description: "Latest data loaded successfully",
+    });
+  };
+
+  const getRowClassName = (status: string) => {
+    switch (status) {
+      case "sap_shortage":
+        return "bg-red-500/10 hover:bg-red-500/20";
+      case "robot_shortage":
+        return "bg-orange-500/10 hover:bg-orange-500/20";
+      case "matched":
+        return "bg-green-500/10 hover:bg-green-500/20";
+      default:
+        return "";
+    }
+  };
+
+  const renderTable = (data: ReconcileRecord[] | undefined, isLoading: boolean) => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="animate-spin text-primary" size={32} />
+        </div>
+      );
+    }
+
+    if (!data || data.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No records found</p>
+        </div>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Material</TableHead>
+            <TableHead className="text-right">SAP Quantity</TableHead>
+            <TableHead className="text-right">Item Quantity</TableHead>
+            <TableHead className="text-right">Quantity Difference</TableHead>
+            <TableHead>Reconcile Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((record, index) => (
+            <TableRow key={index} className={getRowClassName(record.reconcile_status)}>
+              <TableCell className="font-medium">{record.material}</TableCell>
+              <TableCell className="text-right">{record.sap_quantity}</TableCell>
+              <TableCell className="text-right">{record.item_quantity}</TableCell>
+              <TableCell className="text-right">{record.quantity_difference}</TableCell>
+              <TableCell className="capitalize">{record.reconcile_status.replace('_', ' ')}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="bg-card border-b-2 border-border shadow-sm sticky top-0 z-10">
+        <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => navigate("/home")}
+              variant="ghost"
+              size="icon"
+              className="text-foreground hover:bg-accent/10"
+            >
+              <ArrowLeft size={24} />
+            </Button>
+            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+              <FileText className="text-primary-foreground" size={24} />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">SAP Reconcile</h1>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRefresh}
+              variant="ghost"
+              size="icon"
+              className="text-accent hover:bg-accent/10"
+            >
+              <RefreshCw size={24} />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Upload Button */}
+      <div className="container max-w-6xl mx-auto px-4 py-4">
+        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full sm:w-auto">
+              <Upload className="mr-2" size={20} />
+              Upload SAP Reconcile File
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Upload SAP Reconcile File</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                  isDragging ? 'border-primary bg-primary/10' : 'border-border'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Upload className="mx-auto mb-4 text-muted-foreground" size={48} />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Drag and drop your file here, or
+                </p>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  Browse Files
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileSelect}
+                />
+              </div>
+
+              {selectedFile && (
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium">Selected file:</p>
+                  <p className="text-sm text-muted-foreground">{selectedFile.name}</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleUpload}
+                disabled={!selectedFile || uploadMutation.isPending}
+                className="w-full"
+              >
+                {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Tabs */}
+      <div className="container max-w-6xl mx-auto px-4 pb-6 flex-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="sap_shortage">SAP Shortage</TabsTrigger>
+            <TabsTrigger value="robot_shortage">Robot Shortage</TabsTrigger>
+            <TabsTrigger value="matched">Matched</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="sap_shortage" className="border rounded-lg bg-card">
+            <ScrollArea className="h-[calc(100vh-320px)]">
+              {renderTable(sapShortageData, sapShortageLoading)}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="robot_shortage" className="border rounded-lg bg-card">
+            <ScrollArea className="h-[calc(100vh-320px)]">
+              {renderTable(robotShortageData, robotShortageLoading)}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="matched" className="border rounded-lg bg-card">
+            <ScrollArea className="h-[calc(100vh-320px)]">
+              {renderTable(matchedData, matchedLoading)}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default SapReconcile;

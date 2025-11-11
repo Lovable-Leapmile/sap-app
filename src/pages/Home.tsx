@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, Package, Scan, Upload } from "lucide-react";
+import { LogOut, Package, Scan, Upload, FileText } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -114,6 +114,19 @@ const Home = () => {
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-2">SAP Orders</h2>
                 <p className="text-muted-foreground">View and manage active orders</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* SAP Reconcile Button */}
+          <Card className="p-8 bg-card hover:shadow-xl transition-all duration-300 border-2 border-border hover:border-primary/50 cursor-pointer animate-fade-in" onClick={() => navigate("/sap-reconcile")}>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <FileText className="text-primary" size={48} />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-2">SAP Reconcile</h2>
+                <p className="text-muted-foreground">Reconcile SAP data and view reports</p>
               </div>
             </div>
           </Card>

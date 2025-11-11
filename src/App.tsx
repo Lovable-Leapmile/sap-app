@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import SapOrdersList from "./pages/SapOrdersList";
+import SapReconcile from "./pages/SapReconcile";
 import ScanTray from "./pages/ScanTray";
 import OrderDetails from "./pages/OrderDetails";
 import TraysForItem from "./pages/TraysForItem";
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Login />} />
           <Route path="/home" element={<Home />} />
           <Route path="/sap-orders" element={<SapOrdersList />} />
+          <Route path="/sap-reconcile" element={<SapReconcile />} />
           <Route path="/scan-tray" element={<ScanTray />} />
           <Route path="/order/:orderId" element={<OrderDetails />} />
           <Route path="/trays/:orderId/:itemId" element={<TraysForItem />} />
