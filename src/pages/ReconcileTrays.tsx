@@ -18,14 +18,16 @@ import {
 
 interface ItemDetails {
   id: number;
-  item_id: string;
+  material: string;
+  sap_quantity: number;
+  sap_date: string;
+  item_quantity: number;
   item_description: string;
   item_weight: number | null;
-  item_image: string | null;
-  fifo: boolean;
-  item_quantity: number;
-  updated_at: string;
+  quantity_difference: number;
+  reconcile_status: string;
   created_at: string;
+  updated_at: string;
 }
 
 interface Tray {
@@ -46,11 +48,11 @@ interface TrayOrder {
   tray_id: string;
 }
 
-const fetchItemDetails = async (itemId: string): Promise<ItemDetails | null> => {
+const fetchItemDetails = async (material: string): Promise<ItemDetails | null> => {
   const authToken = localStorage.getItem('authToken');
   
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/items?item_id=${itemId}`,
+    `https://robotmanagerv1test.qikpod.com/nanostore/sap_reconcile/report?material=${material}&num_records=100&offset=0`,
     {
       headers: {
         accept: "application/json",
@@ -128,6 +130,7 @@ const ReconcileTrays = () => {
     queryFn: () => fetchItemDetails(material || ""),
     enabled: !!material,
     retry: false,
+    refetchInterval: 5000,
   });
 
   // Fetch in-storage trays
@@ -494,18 +497,22 @@ const ReconcileTrays = () => {
       {itemDetails && (
         <div className="container max-w-6xl mx-auto px-4 py-4">
           <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground font-medium">Item ID</p>
-                <p className="text-2xl font-bold text-foreground">{itemDetails.item_id}</p>
+                <p className="text-sm text-muted-foreground font-medium">SAP Quantity</p>
+                <p className="text-2xl font-bold text-foreground">{itemDetails.sap_quantity}</p>
               </div>
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground font-medium">Available Quantity</p>
-                <p className="text-3xl font-bold text-primary">{itemDetails.item_quantity}</p>
+                <p className="text-sm text-muted-foreground font-medium">Item Quantity</p>
+                <p className="text-2xl font-bold text-primary">{itemDetails.item_quantity}</p>
               </div>
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground font-medium">Description</p>
-                <p className="text-lg font-semibold text-foreground">{itemDetails.item_description}</p>
+                <p className="text-sm text-muted-foreground font-medium">Difference</p>
+                <p className="text-2xl font-bold text-destructive">{itemDetails.quantity_difference}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Status</p>
+                <p className="text-lg font-semibold text-warning capitalize">{itemDetails.reconcile_status.replace('_', ' ')}</p>
               </div>
             </div>
           </Card>
@@ -523,12 +530,12 @@ const ReconcileTrays = () => {
                 {stationTrays?.length || 0}
               </span>
             </div>
-            <ScrollArea className="h-[300px]">
-              {!stationTrays || stationTrays.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">No trays in station</p>
-                </div>
-              ) : (
+            {!stationTrays || stationTrays.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No trays in station</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[300px]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
                   {stationTrays.map((tray) => {
                     const order = trayOrders.get(tray.tray_id);
@@ -588,8 +595,8 @@ const ReconcileTrays = () => {
                     );
                   })}
                 </div>
-              )}
-            </ScrollArea>
+              </ScrollArea>
+            )}
           </div>
 
           {/* In Storage Trays */}
@@ -600,12 +607,12 @@ const ReconcileTrays = () => {
                 {storageTrays?.length || 0}
               </span>
             </div>
-            <ScrollArea className="h-[300px]">
-              {!storageTrays || storageTrays.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">No trays in storage</p>
-                </div>
-              ) : (
+            {!storageTrays || storageTrays.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No trays in storage</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[300px]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
                   {storageTrays.map((tray) => {
                     const isRetrieving = retrievingTrayId === tray.tray_id;
@@ -649,8 +656,8 @@ const ReconcileTrays = () => {
                     );
                   })}
                 </div>
-              )}
-            </ScrollArea>
+              </ScrollArea>
+            )}
           </div>
         </div>
       </div>
