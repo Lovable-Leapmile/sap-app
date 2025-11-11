@@ -1,0 +1,716 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Package, RefreshCw, Minus, Plus } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+
+interface ItemDetails {
+  id: number;
+  item_id: string;
+  item_description: string;
+  item_weight: number | null;
+  item_image: string | null;
+  fifo: boolean;
+  item_quantity: number;
+  updated_at: string;
+  created_at: string;
+}
+
+interface Tray {
+  id: number;
+  tray_id: string;
+  tray_status: string;
+  available_quantity: number;
+  inbound_date: string;
+  item_id: string;
+  item_description: string;
+  tray_height: number;
+  tray_weight: number;
+}
+
+interface TrayOrder {
+  id: number;
+  station_friendly_name: string;
+  tray_id: string;
+}
+
+const fetchItemDetails = async (itemId: string): Promise<ItemDetails | null> => {
+  const authToken = localStorage.getItem('authToken');
+  
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/items?item_id=${itemId}`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return data.records && data.records.length > 0 ? data.records[0] : null;
+};
+
+const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> => {
+  const authToken = localStorage.getItem('authToken');
+  
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&order_type=outbound&like=false&num_records=10&offset=0&order_flow=fifo`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = await response.json();
+  return data.records || [];
+};
+
+const fetchTrayOrder = async (trayId: string): Promise<TrayOrder | null> => {
+  const authToken = localStorage.getItem('authToken');
+  
+  const response = await fetch(
+    `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${trayId}&tray_status=tray_ready_to_use&user_id=1&order_by_field=updated_at&order_by_type=ASC`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return data.records && data.records.length > 0 ? data.records[0] : null;
+};
+
+const ReconcileTrays = () => {
+  const { material } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const [selectedTray, setSelectedTray] = useState<Tray | null>(null);
+  const [orderId, setOrderId] = useState<number | null>(null);
+  const [quantityToPick, setQuantityToPick] = useState(1);
+  const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [releasingTrayId, setReleasingTrayId] = useState<string | null>(null);
+  const [retrievingTrayId, setRetrievingTrayId] = useState<string | null>(null);
+
+  // Fetch item details
+  const { data: itemDetails, refetch: refetchItemDetails } = useQuery({
+    queryKey: ["item-details", material],
+    queryFn: () => fetchItemDetails(material || ""),
+    enabled: !!material,
+    retry: false,
+  });
+
+  // Fetch in-storage trays
+  const { data: storageTrays, refetch: refetchStorage } = useQuery({
+    queryKey: ["storage-trays-reconcile", material],
+    queryFn: () => fetchTrays(material || "", false),
+    enabled: !!material,
+    retry: false,
+    refetchInterval: 5000,
+  });
+
+  // Fetch in-station trays with their orders
+  const { data: stationTraysData, refetch: refetchStation } = useQuery({
+    queryKey: ["station-trays-reconcile", material],
+    queryFn: async () => {
+      const trays = await fetchTrays(material || "", true);
+      const orderPromises = trays.map(tray => fetchTrayOrder(tray.tray_id));
+      const orders = await Promise.all(orderPromises);
+      
+      const ordersMap = new Map<string, TrayOrder>();
+      orders.forEach((order, index) => {
+        if (order) {
+          ordersMap.set(trays[index].tray_id, order);
+        }
+      });
+      
+      return { trays, ordersMap };
+    },
+    enabled: !!material,
+    retry: false,
+    refetchInterval: 5000,
+  });
+
+  const stationTrays = stationTraysData?.trays;
+  const trayOrders = stationTraysData?.ordersMap || new Map<string, TrayOrder>();
+
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  const handleRefresh = async () => {
+    toast({
+      title: "Refreshing data...",
+    });
+    await Promise.all([refetchItemDetails(), refetchStorage(), refetchStation()]);
+    toast({
+      title: "Data updated",
+      description: "Latest data loaded successfully",
+    });
+  };
+
+  const handleRetrieveTray = async (tray: Tray) => {
+    setRetrievingTrayId(tray.tray_id);
+    const authToken = localStorage.getItem('authToken');
+    
+    try {
+      const checkResponse = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&order_by_field=updated_at&order_by_type=ASC`,
+        {
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      const checkData = await checkResponse.json();
+
+      if (checkResponse.ok && checkData.records && checkData.records.length > 0) {
+        toast({
+          title: "Tray Already in Station",
+          description: `Tray ${tray.tray_id} is ready`,
+        });
+      } else {
+        const createResponse = await fetch(
+          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
+          {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: "",
+          }
+        );
+
+        if (!createResponse.ok) {
+          throw new Error("Failed to create order");
+        }
+
+        toast({
+          title: "Tray Requested",
+          description: `Waiting for tray ${tray.tray_id} to arrive at station...`,
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
+      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to retrieve tray",
+        variant: "destructive",
+      });
+    } finally {
+      setRetrievingTrayId(null);
+    }
+  };
+
+  const handlePickItem = async (tray: Tray) => {
+    const existingOrder = trayOrders.get(tray.tray_id);
+    
+    if (existingOrder) {
+      setSelectedTray(tray);
+      setOrderId(existingOrder.id);
+      setQuantityToPick(1);
+      setIsPickingDialogOpen(true);
+    } else {
+      const authToken = localStorage.getItem('authToken');
+      
+      try {
+        const checkResponse = await fetch(
+          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
+          {
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+
+        const checkData = await checkResponse.json();
+
+        if (!checkResponse.ok || !checkData.records || checkData.records.length === 0) {
+          toast({
+            title: "Tray Not In Station",
+            description: `Tray ${tray.tray_id} is not available for picking`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const createResponse = await fetch(
+          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
+          {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: "",
+          }
+        );
+
+        if (!createResponse.ok) {
+          throw new Error("Failed to create order");
+        }
+
+        const createData = await createResponse.json();
+        const order_id = createData.records[0].id;
+
+        toast({
+          title: "Order Created",
+          description: `Order ID: ${order_id}`,
+        });
+
+        setSelectedTray(tray);
+        setOrderId(order_id);
+        setQuantityToPick(1);
+        setIsPickingDialogOpen(true);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to create order",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedTray || !orderId || !material) return;
+
+    setIsSubmitting(true);
+    const authToken = localStorage.getItem('authToken');
+    
+    try {
+      const response = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}`,
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: "",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit transaction");
+      }
+
+      toast({
+        title: "Success",
+        description: `Picked ${quantityToPick} items from tray ${selectedTray.tray_id}`,
+      });
+
+      setIsPickingDialogOpen(false);
+      setSelectedTray(null);
+      setOrderId(null);
+      setQuantityToPick(1);
+      
+      await refetchItemDetails();
+      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
+      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit picking transaction",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRelease = async (tray: Tray) => {
+    const existingOrder = trayOrders.get(tray.tray_id);
+    if (!existingOrder) {
+      toast({
+        title: "Error",
+        description: "No order found for this tray",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setReleasingTrayId(tray.tray_id);
+    const authToken = localStorage.getItem('authToken');
+    
+    try {
+      const response = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${existingOrder.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: "",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to release tray");
+      }
+
+      toast({
+        title: "Tray Released Successfully",
+        description: `Tray ${tray.tray_id} has been released`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
+      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to release tray",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+      setReleasingTrayId(null);
+    }
+  };
+
+  const handleReleaseFromDialog = async () => {
+    if (!orderId) return;
+
+    setIsSubmitting(true);
+    const authToken = localStorage.getItem('authToken');
+    
+    try {
+      const response = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${orderId}`,
+        {
+          method: "PATCH",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: "",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to release tray");
+      }
+
+      toast({
+        title: "Tray Released Successfully",
+        description: `Tray ${selectedTray?.tray_id} has been released`,
+      });
+
+      setIsPickingDialogOpen(false);
+      setSelectedTray(null);
+      setOrderId(null);
+      setQuantityToPick(1);
+      
+      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
+      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to release tray",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="bg-card border-b-2 border-border shadow-sm sticky top-0 z-10">
+        <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => navigate("/sap-reconcile")}
+              variant="ghost"
+              size="icon"
+              className="text-foreground hover:bg-accent/10"
+            >
+              <ArrowLeft size={24} />
+            </Button>
+            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+              <Package className="text-primary-foreground" size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{material}</h1>
+              <p className="text-sm text-muted-foreground">{itemDetails?.item_description || ""}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRefresh}
+              variant="ghost"
+              size="icon"
+              className="text-accent hover:bg-accent/10"
+            >
+              <RefreshCw size={24} />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Item Details Card */}
+      {itemDetails && (
+        <div className="container max-w-6xl mx-auto px-4 py-4">
+          <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Item ID</p>
+                <p className="text-2xl font-bold text-foreground">{itemDetails.item_id}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Available Quantity</p>
+                <p className="text-3xl font-bold text-primary">{itemDetails.item_quantity}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Description</p>
+                <p className="text-lg font-semibold text-foreground">{itemDetails.item_description}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Trays Content */}
+      <div className="container max-w-7xl mx-auto px-2 sm:px-4 pb-6 flex-1">
+        <div className="space-y-6">
+          {/* In Station Trays */}
+          <div>
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <h2 className="text-xl font-bold text-foreground">🏭 In Station Trays</h2>
+              <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                {stationTrays?.length || 0}
+              </span>
+            </div>
+            <ScrollArea className="h-[300px]">
+              {!stationTrays || stationTrays.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No trays in station</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+                  {stationTrays.map((tray) => {
+                    const order = trayOrders.get(tray.tray_id);
+                    const isReleasing = releasingTrayId === tray.tray_id;
+                    return (
+                      <Card key={tray.id} className="p-4 bg-card border-2 border-primary/20 hover:border-primary/40 transition-all">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Package className="text-primary" size={20} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Tray ID</p>
+                                <p className="font-bold text-foreground">{tray.tray_id}</p>
+                              </div>
+                            </div>
+                            {order && (
+                              <div className="px-2 py-1 rounded-md bg-success/20 text-success text-xs font-semibold">
+                                {order.station_friendly_name}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Quantity</p>
+                              <p className="font-bold text-foreground">{tray.available_quantity}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Status</p>
+                              <p className="font-semibold text-success">In Station</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleRelease(tray)}
+                              disabled={isReleasing || isSubmitting}
+                              variant="outline"
+                              className="flex-1"
+                              size="sm"
+                            >
+                              {isReleasing ? <RefreshCw className="animate-spin" size={16} /> : "Release"}
+                            </Button>
+                            <Button
+                              onClick={() => handlePickItem(tray)}
+                              disabled={isSubmitting}
+                              className="flex-1"
+                              size="sm"
+                            >
+                              Pick
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+
+          {/* In Storage Trays */}
+          <div>
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <h2 className="text-xl font-bold text-foreground">🏗 In Storage Trays</h2>
+              <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-semibold">
+                {storageTrays?.length || 0}
+              </span>
+            </div>
+            <ScrollArea className="h-[300px]">
+              {!storageTrays || storageTrays.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No trays in storage</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+                  {storageTrays.map((tray) => {
+                    const isRetrieving = retrievingTrayId === tray.tray_id;
+                    return (
+                      <Card key={tray.id} className="p-4 bg-card border-2 border-border hover:border-primary/30 transition-all">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg bg-secondary/20 flex items-center justify-center">
+                                <Package className="text-secondary" size={20} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Tray ID</p>
+                                <p className="font-bold text-foreground">{tray.tray_id}</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Quantity</p>
+                              <p className="font-bold text-foreground">{tray.available_quantity}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Status</p>
+                              <p className="font-semibold text-warning">In Storage</p>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={() => handleRetrieveTray(tray)}
+                            disabled={isRetrieving || isSubmitting}
+                            className="w-full"
+                            size="sm"
+                          >
+                            {isRetrieving ? <RefreshCw className="animate-spin mr-2" size={16} /> : null}
+                            {isRetrieving ? "Retrieving..." : "Retrieve Tray"}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </div>
+      </div>
+
+      {/* Picking Dialog */}
+      <Dialog open={isPickingDialogOpen} onOpenChange={setIsPickingDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pick Items from Tray</DialogTitle>
+            <DialogDescription>
+              Tray ID: {selectedTray?.tray_id} | Available: {selectedTray?.available_quantity}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Quantity to Pick</label>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setQuantityToPick(Math.max(1, quantityToPick - 1))}
+                  disabled={quantityToPick <= 1}
+                >
+                  <Minus size={20} />
+                </Button>
+                <div className="flex-1 text-center">
+                  <span className="text-3xl font-bold text-foreground">{quantityToPick}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() =>
+                    setQuantityToPick(
+                      Math.min(selectedTray?.available_quantity || 1, quantityToPick + 1)
+                    )
+                  }
+                  disabled={quantityToPick >= (selectedTray?.available_quantity || 1)}
+                >
+                  <Plus size={20} />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={handleReleaseFromDialog}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+            >
+              Release Tray
+            </Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? "Submitting..." : "Confirm Pick"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ReconcileTrays;

@@ -10,6 +10,7 @@ import SapReconcile from "./pages/SapReconcile";
 import ScanTray from "./pages/ScanTray";
 import OrderDetails from "./pages/OrderDetails";
 import TraysForItem from "./pages/TraysForItem";
+import ReconcileTrays from "./pages/ReconcileTrays";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/scan-tray" element={<ScanTray />} />
           <Route path="/order/:orderId" element={<OrderDetails />} />
           <Route path="/trays/:orderId/:itemId" element={<TraysForItem />} />
+          <Route path="/trays-for-item/reconcile/:material" element={<ReconcileTrays />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
