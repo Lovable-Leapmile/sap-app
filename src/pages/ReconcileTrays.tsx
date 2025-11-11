@@ -120,6 +120,8 @@ const ReconcileTrays = () => {
   const [orderId, setOrderId] = useState<number | null>(null);
   const [quantityToPick, setQuantityToPick] = useState(1);
   const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
+  const [actionType, setActionType] = useState<'pick' | 'inbound'>('pick');
+  const [showActionDialog, setShowActionDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [releasingTrayId, setReleasingTrayId] = useState<string | null>(null);
   const [retrievingTrayId, setRetrievingTrayId] = useState<string | null>(null);
@@ -244,19 +246,34 @@ const ReconcileTrays = () => {
   };
 
   const handlePickItem = async (tray: Tray) => {
-    const existingOrder = trayOrders.get(tray.tray_id);
+    setSelectedTray(tray);
+    setQuantityToPick(1);
+    setShowActionDialog(true);
+  };
+
+  const handleActionSelect = async (selectedAction: 'pick' | 'inbound') => {
+    setActionType(selectedAction);
+    setShowActionDialog(false);
+    
+    if (selectedAction === 'inbound') {
+      setIsPickingDialogOpen(true);
+      return;
+    }
+    
+    // For pick action, we need to ensure tray is in station
+    if (!selectedTray) return;
+    
+    const existingOrder = trayOrders.get(selectedTray.tray_id);
     
     if (existingOrder) {
-      setSelectedTray(tray);
       setOrderId(existingOrder.id);
-      setQuantityToPick(1);
       setIsPickingDialogOpen(true);
     } else {
       const authToken = localStorage.getItem('authToken');
       
       try {
         const checkResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
+          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
           {
             headers: {
               accept: "application/json",
@@ -270,14 +287,14 @@ const ReconcileTrays = () => {
         if (!checkResponse.ok || !checkData.records || checkData.records.length === 0) {
           toast({
             title: "Tray Not In Station",
-            description: `Tray ${tray.tray_id} is not available for picking`,
+            description: `Tray ${selectedTray.tray_id} is not available for picking`,
             variant: "destructive",
           });
           return;
         }
 
         const createResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
+          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&user_id=1&auto_complete_time=10`,
           {
             method: "POST",
             headers: {
@@ -300,9 +317,7 @@ const ReconcileTrays = () => {
           description: `Order ID: ${order_id}`,
         });
 
-        setSelectedTray(tray);
         setOrderId(order_id);
-        setQuantityToPick(1);
         setIsPickingDialogOpen(true);
       } catch (error) {
         toast({
@@ -315,32 +330,57 @@ const ReconcileTrays = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedTray || !orderId || !material) return;
+    if (!selectedTray || !material) return;
 
     setIsSubmitting(true);
     const authToken = localStorage.getItem('authToken');
     
     try {
-      const response = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}`,
-        {
-          method: "POST",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: "",
+      if (actionType === 'inbound') {
+        const response = await fetch(
+          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=reconcile&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=inbound`,
+          {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: "",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to submit inbound transaction");
         }
-      );
 
-      if (!response.ok) {
-        throw new Error("Failed to submit transaction");
+        toast({
+          title: "Success",
+          description: `Added ${quantityToPick} items via inbound transaction`,
+        });
+      } else {
+        if (!orderId) return;
+        
+        const response = await fetch(
+          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}`,
+          {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: "",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to submit pick transaction");
+        }
+
+        toast({
+          title: "Success",
+          description: `Picked ${quantityToPick} items from tray ${selectedTray.tray_id}`,
+        });
       }
-
-      toast({
-        title: "Success",
-        description: `Picked ${quantityToPick} items from tray ${selectedTray.tray_id}`,
-      });
 
       setIsPickingDialogOpen(false);
       setSelectedTray(null);
@@ -353,7 +393,7 @@ const ReconcileTrays = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to submit picking transaction",
+        description: `Failed to submit ${actionType} transaction`,
         variant: "destructive",
       });
     } finally {
@@ -662,18 +702,49 @@ const ReconcileTrays = () => {
         </div>
       </div>
 
+      {/* Action Type Dialog */}
+      <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Action</DialogTitle>
+            <DialogDescription>
+              Choose an action for this item
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-4">
+            <Button
+              onClick={() => handleActionSelect('pick')}
+              className="w-full py-6 text-lg"
+            >
+              Pick
+            </Button>
+            <Button
+              onClick={() => handleActionSelect('inbound')}
+              variant="secondary"
+              className="w-full py-6 text-lg"
+            >
+              Inbound
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Picking Dialog */}
       <Dialog open={isPickingDialogOpen} onOpenChange={setIsPickingDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Pick Items from Tray</DialogTitle>
+            <DialogTitle>{actionType === 'inbound' ? 'Inbound Items' : 'Pick Items from Tray'}</DialogTitle>
             <DialogDescription>
-              Tray ID: {selectedTray?.tray_id} | Available: {selectedTray?.available_quantity}
+              {actionType === 'inbound' 
+                ? `Adding items to ${material}` 
+                : `Tray ID: ${selectedTray?.tray_id} | Available: ${selectedTray?.available_quantity}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Quantity to Pick</label>
+              <label className="text-sm font-medium text-foreground">
+                {actionType === 'inbound' ? 'Quantity to Add' : 'Quantity to Pick'}
+              </label>
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
@@ -691,10 +762,12 @@ const ReconcileTrays = () => {
                   size="icon"
                   onClick={() =>
                     setQuantityToPick(
-                      Math.min(selectedTray?.available_quantity || 1, quantityToPick + 1)
+                      actionType === 'inbound' 
+                        ? quantityToPick + 1 
+                        : Math.min(selectedTray?.available_quantity || 1, quantityToPick + 1)
                     )
                   }
-                  disabled={quantityToPick >= (selectedTray?.available_quantity || 1)}
+                  disabled={actionType === 'pick' && quantityToPick >= (selectedTray?.available_quantity || 1)}
                 >
                   <Plus size={20} />
                 </Button>
@@ -702,16 +775,18 @@ const ReconcileTrays = () => {
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={handleReleaseFromDialog}
-              disabled={isSubmitting}
-              className="w-full sm:w-auto"
-            >
-              Release Tray
-            </Button>
+            {actionType === 'pick' && (
+              <Button
+                variant="outline"
+                onClick={handleReleaseFromDialog}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto"
+              >
+                Release Tray
+              </Button>
+            )}
             <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
-              {isSubmitting ? "Submitting..." : "Confirm Pick"}
+              {isSubmitting ? "Submitting..." : `Confirm ${actionType === 'inbound' ? 'Inbound' : 'Pick'}`}
             </Button>
           </DialogFooter>
         </DialogContent>
