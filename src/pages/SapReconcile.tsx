@@ -94,17 +94,36 @@ const SapReconcile = () => {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Success",
         description: "SAP Reconcile file uploaded successfully"
       });
       setSelectedFile(null);
       setIsUploadDialogOpen(false);
-      // Refetch all data
-      queryClient.invalidateQueries({ queryKey: ["reconcile-sap-shortage"] });
-      queryClient.invalidateQueries({ queryKey: ["reconcile-robot-shortage"] });
-      queryClient.invalidateQueries({ queryKey: ["reconcile-matched"] });
+      
+      // Clear all cache and force refetch
+      await queryClient.cancelQueries({ queryKey: ["reconcile-sap-shortage"] });
+      await queryClient.cancelQueries({ queryKey: ["reconcile-robot-shortage"] });
+      await queryClient.cancelQueries({ queryKey: ["reconcile-matched"] });
+      
+      queryClient.removeQueries({ queryKey: ["reconcile-sap-shortage"] });
+      queryClient.removeQueries({ queryKey: ["reconcile-robot-shortage"] });
+      queryClient.removeQueries({ queryKey: ["reconcile-matched"] });
+      
+      // Refetch based on active tab
+      if (activeTab === "sap_shortage") {
+        await refetchSapShortage();
+      } else if (activeTab === "robot_shortage") {
+        await refetchRobotShortage();
+      } else {
+        await refetchMatched();
+      }
+      
+      toast({
+        title: "Data Refreshed",
+        description: "Latest reconcile data loaded",
+      });
     },
     onError: () => {
       toast({
