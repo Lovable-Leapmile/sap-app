@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Package, RefreshCw, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Package, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 
 interface ItemDetails {
@@ -337,8 +338,9 @@ const ReconcileTrays = () => {
     
     try {
       if (actionType === 'inbound') {
+        const currentDate = new Date().toISOString().split('T')[0];
         const response = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=reconcile&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=inbound`,
+          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=reconcile&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=inbound&transaction_date=${currentDate}`,
           {
             method: "POST",
             headers: {
@@ -745,47 +747,25 @@ const ReconcileTrays = () => {
               <label className="text-sm font-medium text-foreground">
                 {actionType === 'inbound' ? 'Quantity to Add' : 'Quantity to Pick'}
               </label>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantityToPick(Math.max(1, quantityToPick - 1))}
-                  disabled={quantityToPick <= 1}
-                >
-                  <Minus size={20} />
-                </Button>
-                <div className="flex-1 text-center">
-                  <span className="text-3xl font-bold text-foreground">{quantityToPick}</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    setQuantityToPick(
-                      actionType === 'inbound' 
-                        ? quantityToPick + 1 
-                        : Math.min(selectedTray?.available_quantity || 1, quantityToPick + 1)
-                    )
+              <Input
+                type="number"
+                value={quantityToPick}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1;
+                  if (actionType === 'pick') {
+                    setQuantityToPick(Math.min(Math.max(1, value), selectedTray?.available_quantity || 1));
+                  } else {
+                    setQuantityToPick(Math.max(1, value));
                   }
-                  disabled={actionType === 'pick' && quantityToPick >= (selectedTray?.available_quantity || 1)}
-                >
-                  <Plus size={20} />
-                </Button>
-              </div>
+                }}
+                min="1"
+                max={actionType === 'pick' ? selectedTray?.available_quantity : undefined}
+                className="text-center text-2xl font-bold"
+              />
             </div>
           </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            {actionType === 'pick' && (
-              <Button
-                variant="outline"
-                onClick={handleReleaseFromDialog}
-                disabled={isSubmitting}
-                className="w-full sm:w-auto"
-              >
-                Release Tray
-              </Button>
-            )}
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
+          <DialogFooter>
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Submitting..." : `Confirm ${actionType === 'inbound' ? 'Inbound' : 'Pick'}`}
             </Button>
           </DialogFooter>
