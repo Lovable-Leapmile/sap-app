@@ -256,12 +256,7 @@ const ReconcileTrays = () => {
     setActionType(selectedAction);
     setShowActionDialog(false);
     
-    if (selectedAction === 'inbound') {
-      setIsPickingDialogOpen(true);
-      return;
-    }
-    
-    // For pick action, we need to ensure tray is in station
+    // Both pick and inbound need to ensure tray is in station and has an order
     if (!selectedTray) return;
     
     const existingOrder = trayOrders.get(selectedTray.tray_id);
@@ -269,69 +264,71 @@ const ReconcileTrays = () => {
     if (existingOrder) {
       setOrderId(existingOrder.id);
       setIsPickingDialogOpen(true);
-    } else {
-      const authToken = localStorage.getItem('authToken');
-      
-      try {
-        const checkResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
-          {
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
-
-        const checkData = await checkResponse.json();
-
-        if (!checkResponse.ok || !checkData.records || checkData.records.length === 0) {
-          toast({
-            title: "Tray Not In Station",
-            description: `Tray ${selectedTray.tray_id} is not available for picking`,
-            variant: "destructive",
-          });
-          return;
+      return;
+    }
+    
+    // No existing order, need to check/create one
+    const authToken = localStorage.getItem('authToken');
+    
+    try {
+      const checkResponse = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
+        {
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
         }
+      );
 
-        const createResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&user_id=1&auto_complete_time=10`,
-          {
-            method: "POST",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
-            body: "",
-          }
-        );
+      const checkData = await checkResponse.json();
 
-        if (!createResponse.ok) {
-          throw new Error("Failed to create order");
-        }
-
-        const createData = await createResponse.json();
-        const order_id = createData.records[0].id;
-
+      if (!checkResponse.ok || !checkData.records || checkData.records.length === 0) {
         toast({
-          title: "Order Created",
-          description: `Order ID: ${order_id}`,
-        });
-
-        setOrderId(order_id);
-        setIsPickingDialogOpen(true);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to create order",
+          title: "Tray Not In Station",
+          description: `Tray ${selectedTray.tray_id} is not available`,
           variant: "destructive",
         });
+        return;
       }
+
+      const createResponse = await fetch(
+        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&user_id=1&auto_complete_time=10`,
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: "",
+        }
+      );
+
+      if (!createResponse.ok) {
+        throw new Error("Failed to create order");
+      }
+
+      const createData = await createResponse.json();
+      const order_id = createData.records[0].id;
+
+      toast({
+        title: "Order Created",
+        description: `Order ID: ${order_id}`,
+      });
+
+      setOrderId(order_id);
+      setIsPickingDialogOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create order",
+        variant: "destructive",
+      });
     }
   };
 
   const handleSubmit = async () => {
-    if (!selectedTray || !material) return;
+    if (!selectedTray || !material || !orderId) return;
 
     setIsSubmitting(true);
     const authToken = localStorage.getItem('authToken');
@@ -340,7 +337,7 @@ const ReconcileTrays = () => {
       if (actionType === 'inbound') {
         const currentDate = new Date().toISOString().split('T')[0];
         const response = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=reconcile&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=inbound&transaction_date=${currentDate}`,
+          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=inbound&transaction_date=${currentDate}`,
           {
             method: "POST",
             headers: {
@@ -360,8 +357,6 @@ const ReconcileTrays = () => {
           description: `Added ${quantityToPick} items via inbound transaction`,
         });
       } else {
-        if (!orderId) return;
-        
         const response = await fetch(
           `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}`,
           {
