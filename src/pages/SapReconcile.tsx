@@ -3,12 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, FileText, Upload, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import ReconcileCard from "@/components/ReconcileCard";
 
 interface ReconcileRecord {
   material: string;
@@ -165,20 +165,7 @@ const SapReconcile = () => {
     });
   };
 
-  const getRowClassName = (status: string) => {
-    switch (status) {
-      case "sap_shortage":
-        return "bg-red-500/10 hover:bg-red-500/20";
-      case "robot_shortage":
-        return "bg-orange-500/10 hover:bg-orange-500/20";
-      case "matched":
-        return "bg-green-500/10 hover:bg-green-500/20";
-      default:
-        return "";
-    }
-  };
-
-  const renderTable = (data: ReconcileRecord[] | undefined, isLoading: boolean) => {
+  const renderCards = (data: ReconcileRecord[] | undefined, isLoading: boolean) => {
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-12">
@@ -196,28 +183,18 @@ const SapReconcile = () => {
     }
 
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Material</TableHead>
-            <TableHead className="text-right">SAP Quantity</TableHead>
-            <TableHead className="text-right">Item Quantity</TableHead>
-            <TableHead className="text-right">Quantity Difference</TableHead>
-            <TableHead>Reconcile Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((record, index) => (
-            <TableRow key={index} className={getRowClassName(record.reconcile_status)}>
-              <TableCell className="font-medium">{record.material}</TableCell>
-              <TableCell className="text-right">{record.sap_quantity}</TableCell>
-              <TableCell className="text-right">{record.item_quantity}</TableCell>
-              <TableCell className="text-right">{record.quantity_difference}</TableCell>
-              <TableCell className="capitalize">{record.reconcile_status.replace('_', ' ')}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        {data.map((record, index) => (
+          <ReconcileCard
+            key={index}
+            material={record.material}
+            sapQuantity={record.sap_quantity}
+            itemQuantity={record.item_quantity}
+            quantityDifference={record.quantity_difference}
+            reconcileStatus={record.reconcile_status}
+          />
+        ))}
+      </div>
     );
   };
 
@@ -311,29 +288,29 @@ const SapReconcile = () => {
       </div>
 
       {/* Tabs */}
-      <div className="container max-w-6xl mx-auto px-4 pb-6 flex-1">
+      <div className="container max-w-7xl mx-auto px-2 sm:px-4 pb-6 flex-1">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="sap_shortage">SAP Shortage</TabsTrigger>
-            <TabsTrigger value="robot_shortage">Robot Shortage</TabsTrigger>
-            <TabsTrigger value="matched">Matched</TabsTrigger>
+            <TabsTrigger value="sap_shortage" className="text-xs sm:text-sm">SAP Shortage</TabsTrigger>
+            <TabsTrigger value="robot_shortage" className="text-xs sm:text-sm">Robot Shortage</TabsTrigger>
+            <TabsTrigger value="matched" className="text-xs sm:text-sm">Matched</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="sap_shortage" className="border rounded-lg bg-card">
-            <ScrollArea className="h-[calc(100vh-320px)]">
-              {renderTable(sapShortageData, sapShortageLoading)}
+          <TabsContent value="sap_shortage">
+            <ScrollArea className="h-[calc(100vh-280px)]">
+              {renderCards(sapShortageData, sapShortageLoading)}
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="robot_shortage" className="border rounded-lg bg-card">
-            <ScrollArea className="h-[calc(100vh-320px)]">
-              {renderTable(robotShortageData, robotShortageLoading)}
+          <TabsContent value="robot_shortage">
+            <ScrollArea className="h-[calc(100vh-280px)]">
+              {renderCards(robotShortageData, robotShortageLoading)}
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="matched" className="border rounded-lg bg-card">
-            <ScrollArea className="h-[calc(100vh-320px)]">
-              {renderTable(matchedData, matchedLoading)}
+          <TabsContent value="matched">
+            <ScrollArea className="h-[calc(100vh-280px)]">
+              {renderCards(matchedData, matchedLoading)}
             </ScrollArea>
           </TabsContent>
         </Tabs>
