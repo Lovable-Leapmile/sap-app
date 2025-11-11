@@ -31,6 +31,11 @@ const fetchReconcileData = async (status: string): Promise<ReconcileRecord[]> =>
     }
   );
 
+  // Handle 404 as valid "no records" response
+  if (response.status === 404) {
+    return [];
+  }
+
   if (!response.ok) {
     throw new Error("Failed to fetch reconcile data");
   }
@@ -60,18 +65,21 @@ const SapReconcile = () => {
     queryKey: ["reconcile-sap-shortage"],
     queryFn: () => fetchReconcileData("sap_shortage"),
     enabled: activeTab === "sap_shortage",
+    retry: false,
   });
 
   const { data: robotShortageData, isLoading: robotShortageLoading, refetch: refetchRobotShortage } = useQuery({
     queryKey: ["reconcile-robot-shortage"],
     queryFn: () => fetchReconcileData("robot_shortage"),
     enabled: activeTab === "robot_shortage",
+    retry: false,
   });
 
   const { data: matchedData, isLoading: matchedLoading, refetch: refetchMatched } = useQuery({
     queryKey: ["reconcile-matched"],
     queryFn: () => fetchReconcileData("matched"),
     enabled: activeTab === "matched",
+    retry: false,
   });
 
   const uploadMutation = useMutation({
