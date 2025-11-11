@@ -6,6 +6,7 @@ interface ReconcileCardProps {
   itemQuantity: number;
   quantityDifference: number;
   reconcileStatus: string;
+  onClick?: () => void;
 }
 
 const ReconcileCard = ({ 
@@ -13,14 +14,18 @@ const ReconcileCard = ({
   sapQuantity, 
   itemQuantity, 
   quantityDifference, 
-  reconcileStatus 
+  reconcileStatus,
+  onClick 
 }: ReconcileCardProps) => {
   const getCardClassName = (status: string) => {
+    const isClickable = (status === "sap_shortage" || status === "robot_shortage") && onClick;
+    const baseClasses = isClickable ? "cursor-pointer" : "";
+    
     switch (status) {
       case "sap_shortage":
-        return "border-red-500 bg-red-500/5 hover:bg-red-500/10";
+        return `${baseClasses} border-red-500 bg-red-500/5 hover:bg-red-500/10`;
       case "robot_shortage":
-        return "border-orange-500 bg-orange-500/5 hover:bg-orange-500/10";
+        return `${baseClasses} border-orange-500 bg-orange-500/5 hover:bg-orange-500/10`;
       case "matched":
         return "border-green-500 bg-green-500/5 hover:bg-green-500/10";
       default:
@@ -41,8 +46,17 @@ const ReconcileCard = ({
     }
   };
 
+  const handleClick = () => {
+    if ((reconcileStatus === "sap_shortage" || reconcileStatus === "robot_shortage") && onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <Card className={`p-4 transition-all duration-200 border-2 ${getCardClassName(reconcileStatus)} animate-fade-in`}>
+    <Card 
+      className={`p-4 transition-all duration-200 border-2 ${getCardClassName(reconcileStatus)} animate-fade-in`}
+      onClick={handleClick}
+    >
       <div className="space-y-3">
         {/* Material - Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border">

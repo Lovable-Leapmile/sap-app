@@ -174,6 +174,10 @@ const SapReconcile = () => {
     });
   };
 
+  const handleCardClick = (material: string) => {
+    navigate(`/trays-for-item/reconcile/${material}`);
+  };
+
   const renderCards = (data: ReconcileRecord[] | undefined, isLoading: boolean) => {
     if (isLoading) {
       return (
@@ -201,6 +205,11 @@ const SapReconcile = () => {
             itemQuantity={record.item_quantity}
             quantityDifference={record.quantity_difference}
             reconcileStatus={record.reconcile_status}
+            onClick={
+              record.reconcile_status === "sap_shortage" || record.reconcile_status === "robot_shortage"
+                ? () => handleCardClick(record.material)
+                : undefined
+            }
           />
         ))}
       </div>
