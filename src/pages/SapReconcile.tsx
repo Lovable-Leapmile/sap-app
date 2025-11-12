@@ -292,14 +292,6 @@ const SapReconcile = () => {
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={handleExport}
-              variant="default"
-              className="gap-2"
-            >
-              <Download size={20} />
-              Export {activeTab === "sap_shortage" ? "SAP Shortage" : activeTab === "robot_shortage" ? "Robot Shortage" : "Matched"}
-            </Button>
-            <Button
               onClick={handleRefresh}
               variant="ghost"
               size="icon"
@@ -311,61 +303,72 @@ const SapReconcile = () => {
         </div>
       </header>
 
-      {/* Upload Button */}
+      {/* Upload and Export Buttons */}
       <div className="container max-w-6xl mx-auto px-4 py-4">
-        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <Upload className="mr-2" size={20} />
-              Upload SAP Reconcile File
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Upload SAP Reconcile File</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  isDragging ? 'border-primary bg-primary/10' : 'border-border'
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <Upload className="mx-auto mb-4 text-muted-foreground" size={48} />
-                <p className="text-sm text-muted-foreground mb-2">
-                  Drag and drop your file here, or
-                </p>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                  Browse Files
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFileSelect}
-                />
-              </div>
-
-              {selectedFile && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium">Selected file:</p>
-                  <p className="text-sm text-muted-foreground">{selectedFile.name}</p>
-                </div>
-              )}
-
-              <Button
-                onClick={handleUpload}
-                disabled={!selectedFile || uploadMutation.isPending}
-                className="w-full"
-              >
-                {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+        <div className="flex flex-wrap gap-3">
+          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex-1 sm:flex-initial">
+                <Upload className="mr-2" size={20} />
+                Upload SAP Reconcile File
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Upload SAP Reconcile File</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    isDragging ? 'border-primary bg-primary/10' : 'border-border'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <Upload className="mx-auto mb-4 text-muted-foreground" size={48} />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Drag and drop your file here, or
+                  </p>
+                  <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    Browse Files
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+
+                {selectedFile && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium">Selected file:</p>
+                    <p className="text-sm text-muted-foreground">{selectedFile.name}</p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleUpload}
+                  disabled={!selectedFile || uploadMutation.isPending}
+                  className="w-full"
+                >
+                  {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Button
+            onClick={handleExport}
+            variant="default"
+            className="gap-2 flex-1 sm:flex-initial"
+          >
+            <Download size={20} />
+            Export {activeTab === "sap_shortage" ? "SAP Shortage" : activeTab === "robot_shortage" ? "Robot Shortage" : "Matched"}
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
