@@ -11,8 +11,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ReconcileCard from "@/components/ReconcileCard";
 import * as XLSX from 'xlsx';
 import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
 import type { ColDef } from 'ag-grid-community';
 
 interface ReconcileRecord {
@@ -321,7 +319,7 @@ const SapReconcile = () => {
 
     if (isLargeScreen) {
       return (
-        <div className="ag-theme-alpine h-[calc(100vh-280px)] w-full">
+        <div className="ag-theme-alpine w-full" style={{ height: 'calc(100vh - 280px)' }}>
           <AgGridReact
             rowData={data}
             columnDefs={columnDefs}
@@ -332,12 +330,14 @@ const SapReconcile = () => {
             }}
             pagination={true}
             paginationPageSize={20}
+            paginationPageSizeSelector={[20, 50, 100]}
             onRowClicked={(event) => {
               if (status === "sap_shortage" || status === "robot_shortage") {
                 handleCardClick(event.data.material);
               }
             }}
             rowStyle={{ cursor: status !== "matched" ? 'pointer' : 'default' }}
+            domLayout="normal"
           />
         </div>
       );
