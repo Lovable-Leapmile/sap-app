@@ -293,11 +293,11 @@ const SapReconcile = () => {
           <div className="flex gap-2">
             <Button
               onClick={handleExport}
-              variant="ghost"
-              size="icon"
-              className="text-accent hover:bg-accent/10"
+              variant="default"
+              className="gap-2"
             >
-              <Download size={24} />
+              <Download size={20} />
+              Export {activeTab === "sap_shortage" ? "SAP Shortage" : activeTab === "robot_shortage" ? "Robot Shortage" : "Matched"}
             </Button>
             <Button
               onClick={handleRefresh}
