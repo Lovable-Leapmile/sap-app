@@ -219,9 +219,9 @@ const SapReconcile = () => {
       minWidth: 150,
       type: 'numericColumn',
       cellStyle: (params) => {
-        if (params.value > 0) return { color: '#10b981' };
-        if (params.value < 0) return { color: '#ef4444' };
-        return { color: '#6b7280' };
+        if (params.value > 0) return { color: 'hsl(var(--success))' };
+        if (params.value < 0) return { color: 'hsl(var(--destructive))' };
+        return { color: 'hsl(var(--muted-foreground))' };
       }
     },
     { 
@@ -229,20 +229,7 @@ const SapReconcile = () => {
       headerName: 'Status',
       flex: 1,
       minWidth: 150,
-      cellRenderer: (params: any) => {
-        const status = params.value;
-        let className = "px-3 py-1 rounded-full text-xs font-medium inline-block";
-        
-        if (status === 'sap_shortage') {
-          className += " bg-red-100 text-red-800";
-        } else if (status === 'robot_shortage') {
-          className += " bg-yellow-100 text-yellow-800";
-        } else {
-          className += " bg-green-100 text-green-800";
-        }
-        
-        return `<span class="${className}">${status.replace('_', ' ').toUpperCase()}</span>`;
-      }
+      valueFormatter: (params) => (params.value ? String(params.value).replace('_', ' ').toUpperCase() : '')
     }
   ];
 
@@ -330,7 +317,6 @@ const SapReconcile = () => {
             }}
             pagination={true}
             paginationPageSize={20}
-            paginationPageSizeSelector={[20, 50, 100]}
             onRowClicked={(event) => {
               if (status === "sap_shortage" || status === "robot_shortage") {
                 handleCardClick(event.data.material);
