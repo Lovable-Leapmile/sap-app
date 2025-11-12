@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, Upload, RefreshCw } from "lucide-react";
+import { ArrowLeft, FileText, Upload, RefreshCw, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ReconcileCard from "@/components/ReconcileCard";
+import * as XLSX from 'xlsx';
 
 interface ReconcileRecord {
   material: string;
@@ -178,6 +179,60 @@ const SapReconcile = () => {
     navigate(`/trays-for-item/reconcile/${material}`);
   };
 
+  const handleExport = () => {
+    let data: ReconcileRecord[] | undefined;
+    let fileName: string;
+
+    switch (activeTab) {
+      case "sap_shortage":
+        data = sapShortageData;
+        fileName = "SAP_Shortage_Export";
+        break;
+      case "robot_shortage":
+        data = robotShortageData;
+        fileName = "Robot_Shortage_Export";
+        break;
+      case "matched":
+        data = matchedData;
+        fileName = "Matched_Export";
+        break;
+      default:
+        data = [];
+        fileName = "Export";
+    }
+
+    if (!data || data.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no records available for export",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Prepare data for Excel
+    const exportData = data.map(record => ({
+      Material: record.material,
+      "SAP Quantity": record.sap_quantity,
+      "Item Quantity": record.item_quantity,
+      "Quantity Difference": record.quantity_difference,
+      "Reconcile Status": record.reconcile_status
+    }));
+
+    // Create worksheet and workbook
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+
+    // Generate and download file
+    XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: "Export successful",
+      description: `${data.length} records exported to Excel`
+    });
+  };
+
   const renderCards = (data: ReconcileRecord[] | undefined, isLoading: boolean) => {
     if (isLoading) {
       return (
@@ -236,6 +291,14 @@ const SapReconcile = () => {
             <h1 className="text-2xl font-bold text-foreground">SAP Reconcile</h1>
           </div>
           <div className="flex gap-2">
+            <Button
+              onClick={handleExport}
+              variant="ghost"
+              size="icon"
+              className="text-accent hover:bg-accent/10"
+            >
+              <Download size={24} />
+            </Button>
             <Button
               onClick={handleRefresh}
               variant="ghost"
