@@ -10,6 +10,10 @@ import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ReconcileCard from "@/components/ReconcileCard";
 import * as XLSX from 'xlsx';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import type { ColDef } from 'ag-grid-community';
 
 interface ReconcileRecord {
   material: string;
@@ -53,6 +57,16 @@ const SapReconcile = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth > 1000);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth > 1000);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -179,6 +193,61 @@ const SapReconcile = () => {
     navigate(`/trays-for-item/reconcile/${material}`);
   };
 
+  const columnDefs: ColDef<ReconcileRecord>[] = [
+    { 
+      field: 'material', 
+      headerName: 'Material',
+      flex: 1,
+      minWidth: 150
+    },
+    { 
+      field: 'sap_quantity', 
+      headerName: 'SAP Quantity',
+      flex: 1,
+      minWidth: 120,
+      type: 'numericColumn'
+    },
+    { 
+      field: 'item_quantity', 
+      headerName: 'Item Quantity',
+      flex: 1,
+      minWidth: 120,
+      type: 'numericColumn'
+    },
+    { 
+      field: 'quantity_difference', 
+      headerName: 'Quantity Difference',
+      flex: 1,
+      minWidth: 150,
+      type: 'numericColumn',
+      cellStyle: (params) => {
+        if (params.value > 0) return { color: '#10b981' };
+        if (params.value < 0) return { color: '#ef4444' };
+        return { color: '#6b7280' };
+      }
+    },
+    { 
+      field: 'reconcile_status', 
+      headerName: 'Status',
+      flex: 1,
+      minWidth: 150,
+      cellRenderer: (params: any) => {
+        const status = params.value;
+        let className = "px-3 py-1 rounded-full text-xs font-medium inline-block";
+        
+        if (status === 'sap_shortage') {
+          className += " bg-red-100 text-red-800";
+        } else if (status === 'robot_shortage') {
+          className += " bg-yellow-100 text-yellow-800";
+        } else {
+          className += " bg-green-100 text-green-800";
+        }
+        
+        return `<span class="${className}">${status.replace('_', ' ').toUpperCase()}</span>`;
+      }
+    }
+  ];
+
   const handleExport = () => {
     let data: ReconcileRecord[] | undefined;
     let fileName: string;
@@ -233,7 +302,7 @@ const SapReconcile = () => {
     });
   };
 
-  const renderCards = (data: ReconcileRecord[] | undefined, isLoading: boolean) => {
+  const renderContent = (data: ReconcileRecord[] | undefined, isLoading: boolean, status: string) => {
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-12">
@@ -246,6 +315,30 @@ const SapReconcile = () => {
       return (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No records found</p>
+        </div>
+      );
+    }
+
+    if (isLargeScreen) {
+      return (
+        <div className="ag-theme-alpine h-[calc(100vh-280px)] w-full">
+          <AgGridReact
+            rowData={data}
+            columnDefs={columnDefs}
+            defaultColDef={{
+              sortable: true,
+              filter: true,
+              resizable: true,
+            }}
+            pagination={true}
+            paginationPageSize={20}
+            onRowClicked={(event) => {
+              if (status === "sap_shortage" || status === "robot_shortage") {
+                handleCardClick(event.data.material);
+              }
+            }}
+            rowStyle={{ cursor: status !== "matched" ? 'pointer' : 'default' }}
+          />
         </div>
       );
     }
@@ -381,21 +474,33 @@ const SapReconcile = () => {
           </TabsList>
 
           <TabsContent value="sap_shortage">
-            <ScrollArea className="h-[calc(100vh-280px)]">
-              {renderCards(sapShortageData, sapShortageLoading)}
-            </ScrollArea>
+            {isLargeScreen ? (
+              renderContent(sapShortageData, sapShortageLoading, "sap_shortage")
+            ) : (
+              <ScrollArea className="h-[calc(100vh-280px)]">
+                {renderContent(sapShortageData, sapShortageLoading, "sap_shortage")}
+              </ScrollArea>
+            )}
           </TabsContent>
 
           <TabsContent value="robot_shortage">
-            <ScrollArea className="h-[calc(100vh-280px)]">
-              {renderCards(robotShortageData, robotShortageLoading)}
-            </ScrollArea>
+            {isLargeScreen ? (
+              renderContent(robotShortageData, robotShortageLoading, "robot_shortage")
+            ) : (
+              <ScrollArea className="h-[calc(100vh-280px)]">
+                {renderContent(robotShortageData, robotShortageLoading, "robot_shortage")}
+              </ScrollArea>
+            )}
           </TabsContent>
 
           <TabsContent value="matched">
-            <ScrollArea className="h-[calc(100vh-280px)]">
-              {renderCards(matchedData, matchedLoading)}
-            </ScrollArea>
+            {isLargeScreen ? (
+              renderContent(matchedData, matchedLoading, "matched")
+            ) : (
+              <ScrollArea className="h-[calc(100vh-280px)]">
+                {renderContent(matchedData, matchedLoading, "matched")}
+              </ScrollArea>
+            )}
           </TabsContent>
         </Tabs>
       </div>
