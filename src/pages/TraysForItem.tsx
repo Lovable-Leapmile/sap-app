@@ -364,6 +364,35 @@ const TraysForItem = () => {
   const handleSubmit = async () => {
     if (!selectedTray || !orderId_internal || !currentItem || !itemId) return;
 
+    // Validate quantity
+    if (quantityToPick <= 0) {
+      toast({
+        title: "Invalid Quantity",
+        description: "Please enter a quantity greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (quantityToPick > selectedTray.available_quantity) {
+      toast({
+        title: "Quantity Exceeds Available",
+        description: `Only ${selectedTray.available_quantity} items available`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const remainingQty = currentItem.quantity - currentItem.quantity_consumed;
+    if (quantityToPick > remainingQty) {
+      toast({
+        title: "Quantity Exceeds Order Requirement",
+        description: `Only ${remainingQty} items needed for this order`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Submit picking transaction using SAP order item id

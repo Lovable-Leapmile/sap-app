@@ -330,6 +330,25 @@ const ReconcileTrays = () => {
   const handleSubmit = async () => {
     if (!selectedTray || !material || !orderId) return;
 
+    // Validate quantity
+    if (quantityToPick <= 0) {
+      toast({
+        title: "Invalid Quantity",
+        description: "Please enter a quantity greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (actionType === 'pick' && quantityToPick > selectedTray.available_quantity) {
+      toast({
+        title: "Quantity Exceeds Available",
+        description: `Only ${selectedTray.available_quantity} items available`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     const authToken = localStorage.getItem('authToken');
     
@@ -746,17 +765,21 @@ const ReconcileTrays = () => {
                 type="number"
                 value={quantityToPick}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value) || 1;
-                  if (actionType === 'pick') {
-                    setQuantityToPick(Math.min(Math.max(1, value), selectedTray?.available_quantity || 1));
-                  } else {
-                    setQuantityToPick(Math.max(1, value));
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value)) {
+                    setQuantityToPick(value);
+                  } else if (e.target.value === '') {
+                    setQuantityToPick(0);
                   }
                 }}
-                min="1"
-                max={actionType === 'pick' ? selectedTray?.available_quantity : undefined}
+                min="0"
                 className="text-center text-2xl font-bold"
               />
+              {actionType === 'pick' && selectedTray && quantityToPick > selectedTray.available_quantity && (
+                <p className="text-xs text-destructive text-center">
+                  Max available: {selectedTray.available_quantity}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
