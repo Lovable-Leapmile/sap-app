@@ -119,7 +119,7 @@ const ReconcileTrays = () => {
 
   const [selectedTray, setSelectedTray] = useState<Tray | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [quantityToPick, setQuantityToPick] = useState(1);
+  const [quantityToPick, setQuantityToPick] = useState(0);
   const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'pick' | 'inbound'>('pick');
   const [showActionDialog, setShowActionDialog] = useState(false);
@@ -248,7 +248,7 @@ const ReconcileTrays = () => {
 
   const handlePickItem = async (tray: Tray) => {
     setSelectedTray(tray);
-    setQuantityToPick(1);
+    setQuantityToPick(0);
     setShowActionDialog(true);
   };
 
@@ -382,7 +382,7 @@ const ReconcileTrays = () => {
       setIsPickingDialogOpen(false);
       setSelectedTray(null);
       setOrderId(null);
-      setQuantityToPick(1);
+      setQuantityToPick(0);
       
       await refetchItemDetails();
       queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
@@ -480,7 +480,7 @@ const ReconcileTrays = () => {
       setIsPickingDialogOpen(false);
       setSelectedTray(null);
       setOrderId(null);
-      setQuantityToPick(1);
+      setQuantityToPick(0);
       
       queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
       queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });

@@ -16,13 +16,13 @@ interface TrayCardProps {
 
 const TrayCard = ({ trayId, quantity, status, station, onRequest }: TrayCardProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [selectedQuantity, setSelectedQuantity] = useState(0);
   const [showConfirmButtons, setShowConfirmButtons] = useState(false);
   const { toast } = useToast();
 
   const handleSelectTray = () => {
     setIsDialogOpen(true);
-    setSelectedQuantity(1);
+    setSelectedQuantity(0);
     setShowConfirmButtons(false);
   };
 
@@ -57,7 +57,7 @@ const TrayCard = ({ trayId, quantity, status, station, onRequest }: TrayCardProp
   };
 
   const decrementQuantity = () => {
-    if (selectedQuantity > 1) {
+    if (selectedQuantity > 0) {
       setSelectedQuantity(selectedQuantity - 1);
     }
   };
@@ -160,7 +160,7 @@ const TrayCard = ({ trayId, quantity, status, station, onRequest }: TrayCardProp
                 size="icon"
                 variant="outline"
                 onClick={decrementQuantity}
-                disabled={selectedQuantity <= 1}
+                disabled={selectedQuantity <= 0}
                 className="h-12 w-12"
               >
                 <Minus size={20} />

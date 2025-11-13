@@ -141,7 +141,7 @@ const TraysForItem = () => {
 
   const [selectedTray, setSelectedTray] = useState<Tray | null>(null);
   const [orderId_internal, setOrderIdInternal] = useState<number | null>(null);
-  const [quantityToPick, setQuantityToPick] = useState(1);
+  const [quantityToPick, setQuantityToPick] = useState(0);
   const [isPickingDialogOpen, setIsPickingDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [releasingTrayId, setReleasingTrayId] = useState<string | null>(null);
@@ -293,7 +293,7 @@ const TraysForItem = () => {
       // Order exists, open picking dialog
       setSelectedTray(tray);
       setOrderIdInternal(existingOrder.id);
-      setQuantityToPick(1);
+      setQuantityToPick(0);
       setIsPickingDialogOpen(true);
     } else {
       // No order in map, check if tray is in station before creating order
@@ -349,7 +349,7 @@ const TraysForItem = () => {
 
         setSelectedTray(tray);
         setOrderIdInternal(order_id);
-        setQuantityToPick(1);
+        setQuantityToPick(0);
         setIsPickingDialogOpen(true);
       } catch (error) {
         toast({
@@ -393,7 +393,7 @@ const TraysForItem = () => {
       setIsPickingDialogOpen(false);
       setSelectedTray(null);
       setOrderIdInternal(null);
-      setQuantityToPick(1);
+      setQuantityToPick(0);
       
       // Refresh item data and trays
       await refetchItem();
@@ -492,7 +492,7 @@ const TraysForItem = () => {
       setIsPickingDialogOpen(false);
       setSelectedTray(null);
       setOrderIdInternal(null);
-      setQuantityToPick(1);
+      setQuantityToPick(0);
       
       queryClient.invalidateQueries({ queryKey: ["storage-trays"] });
       queryClient.invalidateQueries({ queryKey: ["station-trays"] });
