@@ -6,17 +6,8 @@ import { ArrowLeft, Package, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-
-
 interface ItemDetails {
   id: number;
   material: string;
@@ -30,7 +21,6 @@ interface ItemDetails {
   created_at: string;
   updated_at: string;
 }
-
 interface Tray {
   id: number;
   tray_id: string;
@@ -42,81 +32,59 @@ interface Tray {
   tray_height: number;
   tray_weight: number;
 }
-
 interface TrayOrder {
   id: number;
   station_friendly_name: string;
   tray_id: string;
 }
-
 const fetchItemDetails = async (material: string): Promise<ItemDetails | null> => {
   const authToken = localStorage.getItem('authToken');
-  
-  const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/sap_reconcile/report?material=${material}&num_records=100&offset=0`,
-    {
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
+  const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/sap_reconcile/report?material=${material}&num_records=100&offset=0`, {
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${authToken}`
     }
-  );
-
+  });
   if (!response.ok) {
     return null;
   }
-
   const data = await response.json();
   return data.records && data.records.length > 0 ? data.records[0] : null;
 };
-
 const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> => {
   const authToken = localStorage.getItem('authToken');
-  
-  const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&like=false&num_records=10&offset=0&order_flow=fifo`,
-    {
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
+  const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&like=false&num_records=10&offset=0&order_flow=fifo`, {
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${authToken}`
     }
-  );
-
+  });
   if (!response.ok) {
     return [];
   }
-
   const data = await response.json();
   return data.records || [];
 };
-
 const fetchTrayOrder = async (trayId: string): Promise<TrayOrder | null> => {
   const authToken = localStorage.getItem('authToken');
-  
-  const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${trayId}&tray_status=tray_ready_to_use&user_id=1&order_by_field=updated_at&order_by_type=ASC`,
-    {
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
+  const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${trayId}&tray_status=tray_ready_to_use&user_id=1&order_by_field=updated_at&order_by_type=ASC`, {
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${authToken}`
     }
-  );
-
+  });
   if (!response.ok) {
     return null;
   }
-
   const data = await response.json();
   return data.records && data.records.length > 0 ? data.records[0] : null;
 };
-
 const ReconcileTrays = () => {
-  const { material } = useParams();
+  const {
+    material
+  } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
   const [selectedTray, setSelectedTray] = useState<Tray | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [quantityToPick, setQuantityToPick] = useState(0);
@@ -128,205 +96,184 @@ const ReconcileTrays = () => {
   const [retrievingTrayId, setRetrievingTrayId] = useState<string | null>(null);
 
   // Fetch item details
-  const { data: itemDetails, refetch: refetchItemDetails } = useQuery({
+  const {
+    data: itemDetails,
+    refetch: refetchItemDetails
+  } = useQuery({
     queryKey: ["item-details", material],
     queryFn: () => fetchItemDetails(material || ""),
     enabled: !!material,
     retry: false,
-    refetchInterval: 5000,
+    refetchInterval: 5000
   });
 
   // Fetch in-storage trays
-  const { data: storageTrays, refetch: refetchStorage } = useQuery({
+  const {
+    data: storageTrays,
+    refetch: refetchStorage
+  } = useQuery({
     queryKey: ["storage-trays-reconcile", material],
     queryFn: () => fetchTrays(material || "", false),
     enabled: !!material,
     retry: false,
-    refetchInterval: 5000,
+    refetchInterval: 5000
   });
 
   // Fetch in-station trays with their orders
-  const { data: stationTraysData, refetch: refetchStation } = useQuery({
+  const {
+    data: stationTraysData,
+    refetch: refetchStation
+  } = useQuery({
     queryKey: ["station-trays-reconcile", material],
     queryFn: async () => {
       const trays = await fetchTrays(material || "", true);
       const orderPromises = trays.map(tray => fetchTrayOrder(tray.tray_id));
       const orders = await Promise.all(orderPromises);
-      
       const ordersMap = new Map<string, TrayOrder>();
       orders.forEach((order, index) => {
         if (order) {
           ordersMap.set(trays[index].tray_id, order);
         }
       });
-      
-      return { trays, ordersMap };
+      return {
+        trays,
+        ordersMap
+      };
     },
     enabled: !!material,
     retry: false,
-    refetchInterval: 5000,
+    refetchInterval: 5000
   });
-
   const stationTrays = stationTraysData?.trays;
   const trayOrders = stationTraysData?.ordersMap || new Map<string, TrayOrder>();
-
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
     if (!authToken) {
       navigate("/");
     }
   }, [navigate]);
-
   const handleRefresh = async () => {
     toast({
-      title: "Refreshing data...",
+      title: "Refreshing data..."
     });
     await Promise.all([refetchItemDetails(), refetchStorage(), refetchStation()]);
     toast({
       title: "Data updated",
-      description: "Latest data loaded successfully",
+      description: "Latest data loaded successfully"
     });
   };
-
   const handleRetrieveTray = async (tray: Tray) => {
     setRetrievingTrayId(tray.tray_id);
     const authToken = localStorage.getItem('authToken');
-    
     try {
-      const checkResponse = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&order_by_field=updated_at&order_by_type=ASC`,
-        {
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
+      const checkResponse = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&order_by_field=updated_at&order_by_type=ASC`, {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${authToken}`
         }
-      );
-
+      });
       const checkData = await checkResponse.json();
-
       if (checkResponse.ok && checkData.records && checkData.records.length > 0) {
         toast({
           title: "Tray Already in Station",
-          description: `Tray ${tray.tray_id} is ready`,
+          description: `Tray ${tray.tray_id} is ready`
         });
       } else {
-        const createResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
-          {
-            method: "POST",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
-            body: "",
-          }
-        );
-
+        const createResponse = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`
+          },
+          body: ""
+        });
         if (!createResponse.ok) {
           throw new Error("Failed to create order");
         }
-
         toast({
           title: "Tray Requested",
-          description: `Waiting for tray ${tray.tray_id} to arrive at station...`,
+          description: `Waiting for tray ${tray.tray_id} to arrive at station...`
         });
       }
-
-      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
-      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+      queryClient.invalidateQueries({
+        queryKey: ["storage-trays-reconcile"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["station-trays-reconcile"]
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to retrieve tray",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setRetrievingTrayId(null);
     }
   };
-
   const handlePickItem = async (tray: Tray) => {
     setSelectedTray(tray);
     setQuantityToPick(0);
     setShowActionDialog(true);
   };
-
   const handleActionSelect = async (selectedAction: 'pick' | 'inbound') => {
     setActionType(selectedAction);
     setShowActionDialog(false);
-    
+
     // Both pick and inbound need to ensure tray is in station and has an order
     if (!selectedTray) return;
-    
     const existingOrder = trayOrders.get(selectedTray.tray_id);
-    
     if (existingOrder) {
       setOrderId(existingOrder.id);
       setIsPickingDialogOpen(true);
       return;
     }
-    
+
     // No existing order, need to check/create one
     const authToken = localStorage.getItem('authToken');
-    
     try {
-      const checkResponse = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
-        {
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
+      const checkResponse = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`, {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${authToken}`
         }
-      );
-
+      });
       const checkData = await checkResponse.json();
-
       if (!checkResponse.ok || !checkData.records || checkData.records.length === 0) {
         toast({
           title: "Tray Not In Station",
           description: `Tray ${selectedTray.tray_id} is not available`,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
-
-      const createResponse = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&user_id=1&auto_complete_time=10`,
-        {
-          method: "POST",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: "",
-        }
-      );
-
+      const createResponse = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${selectedTray.tray_id}&user_id=1&auto_complete_time=10`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: ""
+      });
       if (!createResponse.ok) {
         throw new Error("Failed to create order");
       }
-
       const createData = await createResponse.json();
       const order_id = createData.records[0].id;
-
       toast({
         title: "Order Created",
-        description: `Order ID: ${order_id}`,
+        description: `Order ID: ${order_id}`
       });
-
       setOrderId(order_id);
       setIsPickingDialogOpen(true);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to create order",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleSubmit = async () => {
     if (!selectedTray || !material || !orderId) return;
 
@@ -335,188 +282,160 @@ const ReconcileTrays = () => {
       toast({
         title: "Invalid Quantity",
         description: "Please enter a quantity greater than 0",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsSubmitting(true);
     const authToken = localStorage.getItem('authToken');
-    
     try {
       if (actionType === 'inbound') {
         const currentDate = new Date().toISOString().split('T')[0];
-        const response = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=admin&transaction_date=${currentDate}&comment=SAP%20Reconcile%20Inbound`,
-          {
-            method: "POST",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
-            body: "",
-          }
-        );
-
+        const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=admin&transaction_date=${currentDate}&comment=SAP%20Reconcile%20Inbound`, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`
+          },
+          body: ""
+        });
         if (!response.ok) {
           throw new Error("Failed to submit inbound transaction");
         }
-
         toast({
           title: "Success",
-          description: `Added ${quantityToPick} items via inbound transaction`,
+          description: `Added ${quantityToPick} items via inbound transaction`
         });
       } else {
-        const response = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=admin&transaction_date=${selectedTray.inbound_date}&comment=SAP%20Reconcile%20Pickup`,
-          {
-            method: "POST",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
-            body: "",
-          }
-        );
-
+        const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=admin&transaction_date=${selectedTray.inbound_date}&comment=SAP%20Reconcile%20Pickup`, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${authToken}`
+          },
+          body: ""
+        });
         if (!response.ok) {
           throw new Error("Failed to submit pick transaction");
         }
-
         toast({
           title: "Success",
-          description: `Picked ${quantityToPick} items from tray ${selectedTray.tray_id}`,
+          description: `Picked ${quantityToPick} items from tray ${selectedTray.tray_id}`
         });
       }
-
       setIsPickingDialogOpen(false);
       setSelectedTray(null);
       setOrderId(null);
       setQuantityToPick(0);
-      
       await refetchItemDetails();
-      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
-      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+      queryClient.invalidateQueries({
+        queryKey: ["storage-trays-reconcile"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["station-trays-reconcile"]
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: `Failed to submit ${actionType} transaction`,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleRelease = async (tray: Tray) => {
     const existingOrder = trayOrders.get(tray.tray_id);
     if (!existingOrder) {
       toast({
         title: "Error",
         description: "No order found for this tray",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsSubmitting(true);
     setReleasingTrayId(tray.tray_id);
     const authToken = localStorage.getItem('authToken');
-    
     try {
-      const response = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${existingOrder.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: "",
-        }
-      );
-
+      const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${existingOrder.id}`, {
+        method: "PATCH",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: ""
+      });
       if (!response.ok) {
         throw new Error("Failed to release tray");
       }
-
       toast({
         title: "Tray Released Successfully",
-        description: `Tray ${tray.tray_id} has been released`,
+        description: `Tray ${tray.tray_id} has been released`
       });
-
-      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
-      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+      queryClient.invalidateQueries({
+        queryKey: ["storage-trays-reconcile"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["station-trays-reconcile"]
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to release tray",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
       setReleasingTrayId(null);
     }
   };
-
   const handleReleaseFromDialog = async () => {
     if (!orderId) return;
-
     setIsSubmitting(true);
     const authToken = localStorage.getItem('authToken');
-    
     try {
-      const response = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${orderId}`,
-        {
-          method: "PATCH",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: "",
-        }
-      );
-
+      const response = await fetch(`https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${orderId}`, {
+        method: "PATCH",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: ""
+      });
       if (!response.ok) {
         throw new Error("Failed to release tray");
       }
-
       toast({
         title: "Tray Released Successfully",
-        description: `Tray ${selectedTray?.tray_id} has been released`,
+        description: `Tray ${selectedTray?.tray_id} has been released`
       });
-
       setIsPickingDialogOpen(false);
       setSelectedTray(null);
       setOrderId(null);
       setQuantityToPick(0);
-      
-      queryClient.invalidateQueries({ queryKey: ["storage-trays-reconcile"] });
-      queryClient.invalidateQueries({ queryKey: ["station-trays-reconcile"] });
+      queryClient.invalidateQueries({
+        queryKey: ["storage-trays-reconcile"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["station-trays-reconcile"]
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to release tray",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
+  return <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="bg-card border-b-2 border-border shadow-sm sticky top-0 z-10">
         <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => navigate("/sap-reconcile")}
-              variant="ghost"
-              size="icon"
-              className="text-foreground hover:bg-accent/10"
-            >
+            <Button onClick={() => navigate("/sap-reconcile")} variant="ghost" size="icon" className="text-foreground hover:bg-accent/10">
               <ArrowLeft size={24} />
             </Button>
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
@@ -528,12 +447,7 @@ const ReconcileTrays = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={handleRefresh}
-              variant="ghost"
-              size="icon"
-              className="text-accent hover:bg-accent/10"
-            >
+            <Button onClick={handleRefresh} variant="ghost" size="icon" className="text-accent hover:bg-accent/10">
               <RefreshCw size={24} />
             </Button>
           </div>
@@ -541,8 +455,7 @@ const ReconcileTrays = () => {
       </header>
 
       {/* Item Details Card */}
-      {itemDetails && (
-        <div className="container max-w-6xl mx-auto px-4 py-4">
+      {itemDetails && <div className="container max-w-6xl mx-auto px-4 py-4">
           <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
@@ -563,8 +476,7 @@ const ReconcileTrays = () => {
               </div>
             </div>
           </Card>
-        </div>
-      )}
+        </div>}
 
       {/* Trays Content */}
       <div className="container max-w-7xl mx-auto px-2 sm:px-4 pb-6 flex-1">
@@ -577,18 +489,14 @@ const ReconcileTrays = () => {
                 {stationTrays?.length || 0}
               </span>
             </div>
-            {!stationTrays || stationTrays.length === 0 ? (
-              <div className="text-center py-8">
+            {!stationTrays || stationTrays.length === 0 ? <div className="text-center py-8">
                 <p className="text-muted-foreground">No trays in station</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[300px]">
+              </div> : <ScrollArea className="h-[300px]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-                  {stationTrays.map((tray) => {
-                    const order = trayOrders.get(tray.tray_id);
-                    const isReleasing = releasingTrayId === tray.tray_id;
-                    return (
-                      <Card key={tray.id} className="p-4 bg-card border-2 border-primary/20 hover:border-primary/40 transition-all">
+                  {stationTrays.map(tray => {
+                const order = trayOrders.get(tray.tray_id);
+                const isReleasing = releasingTrayId === tray.tray_id;
+                return <Card key={tray.id} className="p-4 bg-card border-2 border-primary/20 hover:border-primary/40 transition-all">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -600,11 +508,9 @@ const ReconcileTrays = () => {
                                 <p className="font-bold text-foreground">{tray.tray_id}</p>
                               </div>
                             </div>
-                            {order && (
-                              <div className="px-2 py-1 rounded-md bg-success/20 text-success text-xs font-semibold">
+                            {order && <div className="px-2 py-1 rounded-md bg-success/20 text-success text-xs font-semibold">
                                 {order.station_friendly_name}
-                              </div>
-                            )}
+                              </div>}
                           </div>
                           
                           <div className="grid grid-cols-2 gap-2 text-sm">
@@ -619,31 +525,16 @@ const ReconcileTrays = () => {
                           </div>
 
                           <div className="flex gap-2">
-                            <Button
-                              onClick={() => handleRelease(tray)}
-                              disabled={isReleasing || isSubmitting}
-                              variant="outline"
-                              className="flex-1"
-                              size="sm"
-                            >
+                            <Button onClick={() => handleRelease(tray)} disabled={isReleasing || isSubmitting} variant="outline" className="flex-1" size="sm">
                               {isReleasing ? <RefreshCw className="animate-spin" size={16} /> : "Release"}
                             </Button>
-                            <Button
-                              onClick={() => handlePickItem(tray)}
-                              disabled={isSubmitting}
-                              className="flex-1"
-                              size="sm"
-                            >
-                              Pick
-                            </Button>
+                            <Button onClick={() => handlePickItem(tray)} disabled={isSubmitting} className="flex-1" size="sm">Reconcile</Button>
                           </div>
                         </div>
-                      </Card>
-                    );
-                  })}
+                      </Card>;
+              })}
                 </div>
-              </ScrollArea>
-            )}
+              </ScrollArea>}
           </div>
 
           {/* In Storage Trays */}
@@ -654,17 +545,13 @@ const ReconcileTrays = () => {
                 {storageTrays?.length || 0}
               </span>
             </div>
-            {!storageTrays || storageTrays.length === 0 ? (
-              <div className="text-center py-8">
+            {!storageTrays || storageTrays.length === 0 ? <div className="text-center py-8">
                 <p className="text-muted-foreground">No trays in storage</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[300px]">
+              </div> : <ScrollArea className="h-[300px]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-                  {storageTrays.map((tray) => {
-                    const isRetrieving = retrievingTrayId === tray.tray_id;
-                    return (
-                      <Card key={tray.id} className="p-4 bg-card border-2 border-border hover:border-primary/30 transition-all">
+                  {storageTrays.map(tray => {
+                const isRetrieving = retrievingTrayId === tray.tray_id;
+                return <Card key={tray.id} className="p-4 bg-card border-2 border-border hover:border-primary/30 transition-all">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -689,22 +576,15 @@ const ReconcileTrays = () => {
                             </div>
                           </div>
 
-                          <Button
-                            onClick={() => handleRetrieveTray(tray)}
-                            disabled={isRetrieving || isSubmitting}
-                            className="w-full"
-                            size="sm"
-                          >
+                          <Button onClick={() => handleRetrieveTray(tray)} disabled={isRetrieving || isSubmitting} className="w-full" size="sm">
                             {isRetrieving ? <RefreshCw className="animate-spin mr-2" size={16} /> : null}
                             {isRetrieving ? "Retrieving..." : "Retrieve Tray"}
                           </Button>
                         </div>
-                      </Card>
-                    );
-                  })}
+                      </Card>;
+              })}
                 </div>
-              </ScrollArea>
-            )}
+              </ScrollArea>}
           </div>
         </div>
       </div>
@@ -719,17 +599,10 @@ const ReconcileTrays = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 py-4">
-            <Button
-              onClick={() => handleActionSelect('pick')}
-              className="w-full py-6 text-lg"
-            >
+            <Button onClick={() => handleActionSelect('pick')} className="w-full py-6 text-lg">
               Pick
             </Button>
-            <Button
-              onClick={() => handleActionSelect('inbound')}
-              variant="secondary"
-              className="w-full py-6 text-lg"
-            >
+            <Button onClick={() => handleActionSelect('inbound')} variant="secondary" className="w-full py-6 text-lg">
               Inbound
             </Button>
           </div>
@@ -742,9 +615,7 @@ const ReconcileTrays = () => {
           <DialogHeader>
             <DialogTitle>{actionType === 'inbound' ? 'Inbound Items' : 'Pick Items from Tray'}</DialogTitle>
             <DialogDescription>
-              {actionType === 'inbound' 
-                ? `Adding items to ${material}` 
-                : `Tray ID: ${selectedTray?.tray_id} | Available: ${selectedTray?.available_quantity}`}
+              {actionType === 'inbound' ? `Adding items to ${material}` : `Tray ID: ${selectedTray?.tray_id} | Available: ${selectedTray?.available_quantity}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -752,20 +623,14 @@ const ReconcileTrays = () => {
               <label className="text-sm font-medium text-foreground">
                 {actionType === 'inbound' ? 'Quantity to Add' : 'Quantity to Pick'}
               </label>
-              <Input
-                type="number"
-                value={quantityToPick}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (!isNaN(value)) {
-                    setQuantityToPick(value);
-                  } else if (e.target.value === '') {
-                    setQuantityToPick(0);
-                  }
-                }}
-                min="0"
-                className="text-center text-2xl font-bold"
-              />
+              <Input type="number" value={quantityToPick} onChange={e => {
+              const value = parseInt(e.target.value);
+              if (!isNaN(value)) {
+                setQuantityToPick(value);
+              } else if (e.target.value === '') {
+                setQuantityToPick(0);
+              }
+            }} min="0" className="text-center text-2xl font-bold" />
             </div>
           </div>
           <DialogFooter>
@@ -775,8 +640,6 @@ const ReconcileTrays = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default ReconcileTrays;
