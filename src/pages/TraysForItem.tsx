@@ -56,7 +56,7 @@ interface Transaction {
 
 const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> => {
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&order_type=outbound&like=false&num_records=10&offset=0&order_flow=fifo`,
+    `https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&like=false&num_records=10&offset=0&order_flow=fifo`,
     {
       headers: {
         accept: "application/json",
