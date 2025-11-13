@@ -340,15 +340,6 @@ const ReconcileTrays = () => {
       return;
     }
 
-    if (actionType === 'pick' && quantityToPick > selectedTray.available_quantity) {
-      toast({
-        title: "Quantity Exceeds Available",
-        description: `Only ${selectedTray.available_quantity} items available`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     const authToken = localStorage.getItem('authToken');
     
@@ -356,7 +347,7 @@ const ReconcileTrays = () => {
       if (actionType === 'inbound') {
         const currentDate = new Date().toISOString().split('T')[0];
         const response = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=inbound&transaction_date=${currentDate}`,
+          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=${quantityToPick}&transaction_type=admin&transaction_date=${currentDate}&comment=SAP%20Reconcile%20Inbound`,
           {
             method: "POST",
             headers: {
@@ -377,7 +368,7 @@ const ReconcileTrays = () => {
         });
       } else {
         const response = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}`,
+          `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId}&item_id=${material}&transaction_item_quantity=-${quantityToPick}&transaction_type=admin&transaction_date=${selectedTray.inbound_date}&comment=SAP%20Reconcile%20Pickup`,
           {
             method: "POST",
             headers: {
@@ -775,11 +766,6 @@ const ReconcileTrays = () => {
                 min="0"
                 className="text-center text-2xl font-bold"
               />
-              {actionType === 'pick' && selectedTray && quantityToPick > selectedTray.available_quantity && (
-                <p className="text-xs text-destructive text-center">
-                  Max available: {selectedTray.available_quantity}
-                </p>
-              )}
             </div>
           </div>
           <DialogFooter>
