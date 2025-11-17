@@ -10,8 +10,6 @@ import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ReconcileCard from "@/components/ReconcileCard";
 import * as XLSX from 'xlsx';
-import { AgGridReact } from 'ag-grid-react';
-import type { ColDef } from 'ag-grid-community';
 
 interface ReconcileRecord {
   material: string;
@@ -55,16 +53,6 @@ const SapReconcile = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth > 1000);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsLargeScreen(window.innerWidth > 1000);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -191,48 +179,6 @@ const SapReconcile = () => {
     navigate(`/trays-for-item/reconcile/${material}`);
   };
 
-  const columnDefs: ColDef<ReconcileRecord>[] = [
-    { 
-      field: 'material', 
-      headerName: 'Material',
-      flex: 1,
-      minWidth: 150
-    },
-    { 
-      field: 'sap_quantity', 
-      headerName: 'SAP Quantity',
-      flex: 1,
-      minWidth: 120,
-      type: 'numericColumn'
-    },
-    { 
-      field: 'item_quantity', 
-      headerName: 'Item Quantity',
-      flex: 1,
-      minWidth: 120,
-      type: 'numericColumn'
-    },
-    { 
-      field: 'quantity_difference', 
-      headerName: 'Quantity Difference',
-      flex: 1,
-      minWidth: 150,
-      type: 'numericColumn',
-      cellStyle: (params) => {
-        if (params.value > 0) return { color: 'hsl(var(--success))' };
-        if (params.value < 0) return { color: 'hsl(var(--destructive))' };
-        return { color: 'hsl(var(--muted-foreground))' };
-      }
-    },
-    { 
-      field: 'reconcile_status', 
-      headerName: 'Status',
-      flex: 1,
-      minWidth: 150,
-      valueFormatter: (params) => (params.value ? String(params.value).replace('_', ' ').toUpperCase() : '')
-    }
-  ];
-
   const handleExport = () => {
     let data: ReconcileRecord[] | undefined;
     let fileName: string;
@@ -300,32 +246,6 @@ const SapReconcile = () => {
       return (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No records found</p>
-        </div>
-      );
-    }
-
-    if (isLargeScreen) {
-      return (
-        <div className="ag-theme-alpine w-full" style={{ height: 'calc(100vh - 280px)', minHeight: 360 }}>
-          <AgGridReact
-            key={`${status}-${isLargeScreen ? 'lg' : 'sm'}`}
-            rowData={data}
-            columnDefs={columnDefs}
-            defaultColDef={{
-              sortable: true,
-              filter: true,
-              resizable: true,
-            }}
-            pagination={true}
-            paginationPageSize={20}
-            onRowClicked={(event) => {
-              if (status === "sap_shortage" || status === "robot_shortage") {
-                handleCardClick(event.data.material);
-              }
-            }}
-            rowStyle={{ cursor: status !== "matched" ? 'pointer' : 'default' }}
-            domLayout="normal"
-          />
         </div>
       );
     }
@@ -461,33 +381,21 @@ const SapReconcile = () => {
           </TabsList>
 
           <TabsContent value="sap_shortage">
-            {isLargeScreen ? (
-              renderContent(sapShortageData, sapShortageLoading, "sap_shortage")
-            ) : (
-              <ScrollArea className="h-[calc(100vh-280px)]">
-                {renderContent(sapShortageData, sapShortageLoading, "sap_shortage")}
-              </ScrollArea>
-            )}
+            <ScrollArea className="h-[calc(100vh-280px)]">
+              {renderContent(sapShortageData, sapShortageLoading, "sap_shortage")}
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="robot_shortage">
-            {isLargeScreen ? (
-              renderContent(robotShortageData, robotShortageLoading, "robot_shortage")
-            ) : (
-              <ScrollArea className="h-[calc(100vh-280px)]">
-                {renderContent(robotShortageData, robotShortageLoading, "robot_shortage")}
-              </ScrollArea>
-            )}
+            <ScrollArea className="h-[calc(100vh-280px)]">
+              {renderContent(robotShortageData, robotShortageLoading, "robot_shortage")}
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="matched">
-            {isLargeScreen ? (
-              renderContent(matchedData, matchedLoading, "matched")
-            ) : (
-              <ScrollArea className="h-[calc(100vh-280px)]">
-                {renderContent(matchedData, matchedLoading, "matched")}
-              </ScrollArea>
-            )}
+            <ScrollArea className="h-[calc(100vh-280px)]">
+              {renderContent(matchedData, matchedLoading, "matched")}
+            </ScrollArea>
           </TabsContent>
         </Tabs>
       </div>
