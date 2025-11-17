@@ -306,8 +306,9 @@ const SapReconcile = () => {
 
     if (isLargeScreen) {
       return (
-        <div className="ag-theme-alpine w-full" style={{ height: 'calc(100vh - 280px)' }}>
+        <div className="ag-theme-alpine w-full" style={{ height: 'calc(100vh - 280px)', minHeight: 360 }}>
           <AgGridReact
+            key={`${status}-${isLargeScreen ? 'lg' : 'sm'}`}
             rowData={data}
             columnDefs={columnDefs}
             defaultColDef={{
