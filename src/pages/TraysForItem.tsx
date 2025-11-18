@@ -56,7 +56,7 @@ interface Transaction {
 
 const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> => {
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&like=false&num_records=10&offset=0&order_flow=fifo`,
+    `https://testhostsushil.leapmile.com/nanostore/trays_for_order?in_station=${inStation}&item_id=${itemId}&like=false&num_records=10&offset=0&order_flow=fifo`,
     {
       headers: {
         accept: "application/json",
@@ -76,7 +76,7 @@ const fetchTrays = async (itemId: string, inStation: boolean): Promise<Tray[]> =
 
 const fetchTrayOrder = async (trayId: string): Promise<TrayOrder | null> => {
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${trayId}&tray_status=tray_ready_to_use&user_id=1&order_by_field=updated_at&order_by_type=ASC`,
+    `https://testhostsushil.leapmile.com/nanostore/orders?tray_id=${trayId}&tray_status=tray_ready_to_use&user_id=1&order_by_field=updated_at&order_by_type=ASC`,
     {
       headers: {
         accept: "application/json",
@@ -96,7 +96,7 @@ const fetchTrayOrder = async (trayId: string): Promise<TrayOrder | null> => {
 
 const fetchSapOrderItem = async (orderRef: string, material: string): Promise<SapOrderItem | null> => {
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/?order_ref=${orderRef}&material=${material}&order_by_field=updated_at&order_by_type=DESC`,
+    `https://testhostsushil.leapmile.com/nanostore/sap_orders/?order_ref=${orderRef}&material=${material}&order_by_field=updated_at&order_by_type=DESC`,
     {
       headers: {
         accept: "application/json",
@@ -116,7 +116,7 @@ const fetchSapOrderItem = async (orderRef: string, material: string): Promise<Sa
 
 const fetchTransactions = async (orderRef: string, itemId: string): Promise<Transaction[]> => {
   const response = await fetch(
-    `https://robotmanagerv1test.qikpod.com/nanostore/transactions?order_ref=${orderRef}&item_id=${itemId}&order_by_field=updated_at&order_by_type=DESC`,
+    `https://testhostsushil.leapmile.com/nanostore/transactions?order_ref=${orderRef}&item_id=${itemId}&order_by_field=updated_at&order_by_type=DESC`,
     {
       headers: {
         accept: "application/json",
@@ -229,7 +229,7 @@ const TraysForItem = () => {
     try {
       // Check for existing order
       const checkResponse = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&order_by_field=updated_at&order_by_type=ASC`,
+        `https://testhostsushil.leapmile.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&order_by_field=updated_at&order_by_type=ASC`,
         {
           headers: {
             accept: "application/json",
@@ -250,7 +250,7 @@ const TraysForItem = () => {
       } else {
         // Create new order to retrieve tray
         const createResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
+          `https://testhostsushil.leapmile.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
           {
             method: "POST",
             headers: {
@@ -299,7 +299,7 @@ const TraysForItem = () => {
       // No order in map, check if tray is in station before creating order
       try {
         const checkResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
+          `https://testhostsushil.leapmile.com/nanostore/orders?tray_id=${tray.tray_id}&tray_status=tray_ready_to_use&status=active&order_by_field=updated_at&order_by_type=DESC`,
           {
             headers: {
               accept: "application/json",
@@ -323,7 +323,7 @@ const TraysForItem = () => {
 
         // Tray is in station, create order
         const createResponse = await fetch(
-          `https://robotmanagerv1test.qikpod.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
+          `https://testhostsushil.leapmile.com/nanostore/orders?tray_id=${tray.tray_id}&user_id=1&auto_complete_time=10`,
           {
             method: "POST",
             headers: {
@@ -397,7 +397,7 @@ const TraysForItem = () => {
     try {
       // Submit picking transaction using SAP order item id
       const response = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/transaction?order_id=${orderId_internal}&item_id=${itemId}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}&sap_order_reference=${currentItem.id}`,
+        `https://testhostsushil.leapmile.com/nanostore/transaction?order_id=${orderId_internal}&item_id=${itemId}&transaction_item_quantity=-${quantityToPick}&transaction_type=outbound&transaction_date=${selectedTray.inbound_date}&sap_order_reference=${currentItem.id}`,
         {
           method: "POST",
           headers: {
@@ -455,7 +455,7 @@ const TraysForItem = () => {
     setReleasingTrayId(tray.tray_id);
     try {
       const response = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${existingOrder.id}`,
+        `https://testhostsushil.leapmile.com/nanostore/orders/complete?record_id=${existingOrder.id}`,
         {
           method: "PATCH",
           headers: {
@@ -496,7 +496,7 @@ const TraysForItem = () => {
     setIsSubmitting(true);
     try {
       const response = await fetch(
-        `https://robotmanagerv1test.qikpod.com/nanostore/orders/complete?record_id=${orderId_internal}`,
+        `https://testhostsushil.leapmile.com/nanostore/orders/complete?record_id=${orderId_internal}`,
         {
           method: "PATCH",
           headers: {

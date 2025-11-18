@@ -31,7 +31,7 @@ const Home = () => {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('https://robotmanagerv1test.qikpod.com/nanostore/sap_orders/upload_file', {
+      const response = await fetch('https://testhostsushil.leapmile.com/nanostore/sap_orders/upload_file', {
         method: 'POST',
         headers: {
           'accept': 'application/json',
